@@ -51,16 +51,16 @@ void SSkyboxAIWidget::LoadExportTypesFromList(const TMap<int, FString> &List)
 }
 
 void SSkyboxAIWidget::LoadViewListFromMap(
-  TArray<TSharedPtr<FText>> &OutValues,
+  TMap<int, FString> &OutValues,
   TArray<TSharedPtr<FText>> &OutFilteredValues,
   const FSkyboxAIWidgetListView &OutListView,
   const TMap<int, FString> &InList,
-  FText &CurrentValue,
+  FSkyboxAIWidgetTuple &CurrentValue,
   const FString &InListSource) const
 {
   for (auto &Item : InList)
   {
-    OutValues.Add(MakeShared<FText>(FText::FromString(Item.Value)));
+    OutValues.Add(Item.Key, Item.Value);
     OutFilteredValues.Add(MakeShared<FText>(FText::FromString(Item.Value)));
   }
 
@@ -70,26 +70,42 @@ void SSkyboxAIWidget::LoadViewListFromMap(
     return;
   }
 
-  UpdateListViewSelection(OutListView, OutFilteredValues, CurrentValue);
+  UpdateListViewSelection(OutListView, OutValues, OutFilteredValues, CurrentValue);
 
   ShowSuccessMessage(FText::FromString(FString::Printf(TEXT("[%s] Refreshed List"), *InListSource)));
 }
 
 void SSkyboxAIWidget::UpdateListViewSelection(
   const FSkyboxAIWidgetListView &ListView,
+  TMap<int, FString> &Map,
   TArray<TSharedPtr<FText>> &List,
-  FText &CurrentValue) const
+  FSkyboxAIWidgetTuple &CurrentValue) const
 {
-  if (!CurrentValue.ToString().Equals(TEXT("")) || (List.Num() > 0 && ListContains(List, CurrentValue)))
+  const FString Value = std::get<TUPLE_VALUE_IDX>(CurrentValue);
+  const TFunction<bool(const TSharedPtr<FText> &, const FString &)> Equals = [](
+    const TSharedPtr<FText> &Item,
+    const FString &Value)
   {
-    if (const int ItemIndex = FindInList(List, CurrentValue); ItemIndex != INDEX_NONE)
+    return Item->EqualTo(FText::FromString(Value));
+  };
+
+  if (Value.IsEmpty() || (List.Num() > 0 && ListContains<TSharedPtr<FText>, FString>(
+    List,
+    Value,
+    Equals
+    )))
+  {
+    if (const int ItemIndex = FindInList<TSharedPtr<FText>, FString>(List, Value, Equals); ItemIndex != INDEX_NONE)
     {
       ListView->SetSelection(List[ItemIndex]);
     }
   }
   else if (List.Num() > 0)
   {
-    CurrentValue = *List[0];
+    const int *DefaultValueId = Map.FindKey(List[0]->ToString());
+    int DefaultId = DefaultValueId == nullptr ? -1 : *DefaultValueId;
+
+    CurrentValue = std::make_tuple(DefaultId, List[0]->ToString());
     ListView->SetSelection(List[0]);
     NotifyWidgetDataUpdated();
   }
@@ -196,15 +212,15 @@ void SSkyboxAIWidget::OnExportTypeSearchTextChanged(const FText &NewText)
 
   const FText SearchString = NewText;
 
-  for (auto &Item : ExportTypes)
+  for (auto &[Key, Value] : ExportTypes)
   {
-    if (Item->ToString().Contains(SearchString.ToString()))
+    if (Value.Contains(SearchString.ToString()))
     {
-      FilteredExportTypes.Add(Item);
+      FilteredExportTypes.Add(MakeShared<FText>(FText::FromString(Value)));
     }
   }
 
-  UpdateListViewSelection(ExportTypeListView, FilteredExportTypes, WidgetData.ExportType);
+  UpdateListViewSelection(ExportTypeListView, ExportTypes, FilteredExportTypes, WidgetData.ExportType);
 }
 
 TSharedRef<ITableRow> SSkyboxAIWidget::OnExportTypeGenerateRow(
@@ -220,7 +236,13 @@ TSharedRef<ITableRow> SSkyboxAIWidget::OnExportTypeGenerateRow(
 void SSkyboxAIWidget::OnExportTypeSelected(TSharedPtr<FText> InItem, ESelectInfo::Type SelectInfo)
 {
   if (SelectInfo == ESelectInfo::Direct) return;
-  WidgetData.ExportType = InItem.IsValid() ? *InItem : FText::FromString(TEXT(""));
+
+  FString NewValue = InItem.IsValid() ? InItem->ToString() : TEXT("");
+  const int *ValueId = ExportTypes.FindKey(NewValue);
+  int FinalId = ValueId == nullptr ? -1 : *ValueId;
+
+  WidgetData.ExportType = std::make_tuple(FinalId, NewValue);
+
   NotifyWidgetDataUpdated();
 }
 
@@ -329,18 +351,17 @@ void SSkyboxAIWidget::OnCategorySearchTextChanged(const FText &NewText)
 
   const FText SearchString = NewText;
 
-  for (auto &Item : Categories)
+  for (auto &[Key, Value] : Categories)
   {
-    if (Item->ToString().Contains(SearchString.ToString()))
+    if (Value.Contains(SearchString.ToString()))
     {
-      FilteredCategories.Add(Item);
+      FilteredCategories.Add(MakeShared<FText>(FText::FromString(Value)));
     }
   }
 
-  UpdateListViewSelection(CategoryListView, FilteredCategories, WidgetData.Category);
+  UpdateListViewSelection(CategoryListView, Categories, FilteredCategories, WidgetData.Category);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
 TSharedRef<ITableRow> SSkyboxAIWidget::OnCategoryGenerateRow(
   TSharedPtr<FText> Item,
   const TSharedRef<STableViewBase> &OwnerTable)
@@ -354,7 +375,13 @@ TSharedRef<ITableRow> SSkyboxAIWidget::OnCategoryGenerateRow(
 void SSkyboxAIWidget::OnCategorySelected(TSharedPtr<FText> InItem, ESelectInfo::Type SelectInfo)
 {
   if (SelectInfo == ESelectInfo::Direct) return;
-  WidgetData.Category = InItem.IsValid() ? *InItem : FText::FromString(TEXT(""));
+
+  FString NewValue = InItem.IsValid() ? InItem->ToString() : TEXT("");
+  const int *ValueId = Categories.FindKey(NewValue);
+  int FinalId = ValueId == nullptr ? -1 : *ValueId;
+
+  WidgetData.Category = std::make_tuple(FinalId, NewValue);
+
   NotifyWidgetDataUpdated();
 }
 
@@ -419,7 +446,6 @@ void SSkyboxAIWidget::OnEnrichPromptChanged(ECheckBoxState NewState)
   NotifyWidgetDataUpdated();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
 FReply SSkyboxAIWidget::OnGenerateClicked()
 {
   return FReply::Handled();
@@ -510,24 +536,4 @@ void SSkyboxAIWidget::NotifyWidgetDataUpdated() const
 {
   if (OnSkyboxAIWidgetDataChanged.ExecuteIfBound(WidgetData)) return;
   UE_LOG(SkyboxAIWidget, Warning, TEXT("Failed to execute OnSkyboxAIWidgetDataChanged"));
-}
-
-bool SSkyboxAIWidget::ListContains(TArray<TSharedPtr<FText>> &List, const FText &Value)
-{
-  for (int i = 0; i < List.Num(); i++)
-  {
-    if (List[i]->ToString().Equals(Value.ToString())) return true;
-  }
-
-  return false;
-}
-
-int SSkyboxAIWidget::FindInList(TArray<TSharedPtr<FText>> &List, const FText &Value)
-{
-  for (int i = 0; i < List.Num(); i++)
-  {
-    if (List[i]->ToString().Equals(Value.ToString())) return i;
-  }
-
-  return INDEX_NONE;
 }
