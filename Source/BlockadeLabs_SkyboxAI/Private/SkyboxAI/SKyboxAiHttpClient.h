@@ -1,8 +1,12 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "HttpFwd.h"
 #include "JsonObjectConverter.h"
 #include "SkyboxAiHttpClient.generated.h"
+
+class FHttpModule;
+typedef TFunction<void(const FString &Body, int StatusCode, bool bConnectedSuccessfully)> FSkyboxAiHttpCallback;
 
 class USkyboxProvider;
 class USKyboxAiHttpClient;
@@ -44,6 +48,15 @@ struct FSkyboxAiHttpHeaders
   FString ContentType = SkyboxAiHttpClient::ContentTypes::GJson;
 };
 
+USTRUCT(BlueprintType)
+struct FSkyboxApiError
+{
+  GENERATED_BODY()
+
+  UPROPERTY()
+  FString error;
+};
+
 UCLASS()
 class USkyboxApi : public UObject
 {
@@ -71,17 +84,20 @@ class USKyboxAiHttpClient : public UObject
   GENERATED_BODY()
 
 public:
+  USKyboxAiHttpClient();
+
   FORCEINLINE FString GetAPIKey() const { return APIKey; }
   FORCEINLINE FString GetAPIEndpoint() const { return APIEndpoint; }
 
-  void ConfigureClient(FString InAPIKey, FString InEndpointOverride = "");
+  void SetHttpModule(FHttpModule *InHttp);
+  void SetApiKey(FString InAPIKey);
+  void SetApiEndpoint(FString InEndpointOverride);
 
   void MakeAPIRequest(
     const FString &Endpoint,
     const FSkyboxAiHttpHeaders &Headers,
     const FString &Body,
-    TFunction<void(const FString &)> Callback
-    );
+    FSkyboxAiHttpCallback Callback) const;
 
   template <typename T> static FString *SerializeJSON(const T &Object);
   template <typename T> static FString *SerializeJSON(const TArray<T> &Object);
@@ -91,8 +107,9 @@ public:
 private:
   FString APIKey;
   FString APIEndpoint = TEXT("https://backend.blockadelabs.com/api/v1");
+  FHttpModule *Http;
 
-  void ShowHTTPError(const int32 Code, const FText &Message) const;
+  void HandleHttpResponse(FHttpResponseRef Res) const;
 };
 
 template <typename T> FString *USKyboxAiHttpClient::SerializeJSON(const T &Object)

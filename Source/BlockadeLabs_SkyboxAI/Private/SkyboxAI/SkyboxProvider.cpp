@@ -3,27 +3,28 @@
 
 USkyboxProvider::USkyboxProvider()
 {
-  APIClient = CreateDefaultSubobject<USKyboxAiHttpClient>("APIClient");
+  SetClient(CreateDefaultSubobject<USKyboxAiHttpClient>("APIClient"));
 }
 
 void USkyboxProvider::SetClient(USKyboxAiHttpClient *InAPIClient)
 {
-  APIClient = InAPIClient;
-}
-
-void USkyboxProvider::Categories() const
-{
-  if (APIClient == nullptr)
+  if (APIClient = InAPIClient; APIClient == nullptr)
   {
     FMessageLog(SkyboxAiHttpClient::GMessageLogName).Error(FText::FromString(TEXT("Client wasn't initialized")));
-    return;
   }
+}
 
+void USkyboxProvider::Post(const FSkyboxGenerateRequest &Data, FPostCallback Callback) const
+{
+}
+
+void USkyboxProvider::GetStyles(FGetStylesCallback Callback) const
+{
   APIClient->MakeAPIRequest(
     TEXT("/skybox/styles"),
     FSkyboxAiHttpHeaders(),
     TEXT(""),
-    [this](const FString &Body)
+    [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
     {
       TMap<int, FString> Styles = TMap<int, FString>();
 
@@ -33,12 +34,12 @@ void USkyboxProvider::Categories() const
         Styles.Add(Item.id, Item.name);
       }
 
-      OnCategoriesRetrieved.Broadcast(Styles);
+      Callback(Styles, StatusCode, bConnectedSuccessfully);
     }
     );
 }
 
-void USkyboxProvider::ExportTypes() const
+void USkyboxProvider::GetExports(FGetExportsCallback Callback) const
 {
   if (APIClient == nullptr)
   {
@@ -50,7 +51,7 @@ void USkyboxProvider::ExportTypes() const
     TEXT("/skybox/export"),
     FSkyboxAiHttpHeaders(),
     TEXT(""),
-    [this](const FString &Body)
+    [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
     {
       TMap<int, FString> Types = TMap<int, FString>();
 
@@ -61,7 +62,25 @@ void USkyboxProvider::ExportTypes() const
         Types.Add(Type.id, Type.name);
       }
 
-      OnExportTypesRetrieved.Broadcast(Types);
+      Callback(Types, StatusCode, bConnectedSuccessfully);
     }
     );
+}
+
+void USkyboxProvider::GetExport(const FString Id, FGetExportCallback Callback) const
+{
+  APIClient->MakeAPIRequest(
+    TEXT("/skybox/export/" + Id),
+    FSkyboxAiHttpHeaders(),
+    TEXT(""),
+    [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
+    {
+      FSkyboxExportResponse *Response = USKyboxAiHttpClient::DeserializeJSONToUStruct<FSkyboxExportResponse>(Body);
+      Callback(Response, StatusCode, bConnectedSuccessfully);
+    }
+    );
+}
+
+void USkyboxProvider::PostExport(const FSkyboxExportRequest &Data, FPostExportCallback Callback) const
+{
 }

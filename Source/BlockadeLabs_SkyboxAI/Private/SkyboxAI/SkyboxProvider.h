@@ -3,27 +3,24 @@
 #include "CoreMinimal.h"
 #include "SkyboxProvider.generated.h"
 
-typedef const TMap<int, FString> FSkyboxAiCategories;
-typedef const TMap<int, FString> FSkyboxAiExportTypes;
-
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnCategoriesRetrieved, FSkyboxAiCategories&);
-
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnExportTypesRetrieved, FSkyboxAiExportTypes&);
-
 class USKyboxAiHttpClient;
 
-// ReSharper disable CppUE4CodingStandardNamingViolationWarning
+struct FSkyboxGenerateResponse;
+struct FSkyboxExportResponse;
 
-USTRUCT(BlueprintType)
-struct FSkyboxStyleFamily
+typedef const TMap<int, FString> FSkyboxAiStyles;
+typedef const TMap<int, FString> FSkyboxAiExportTypes;
+
+typedef TFunction<void(int StatusCode, bool bConnectedSuccessfully)> FPostCallback;
+typedef TFunction<void(FSkyboxAiStyles &, int StatusCode, bool bConnectedSuccessfully)> FGetStylesCallback;
+typedef TFunction<void(FSkyboxAiExportTypes &, int StatusCode, bool bConnectedSuccessfully)> FGetExportsCallback;
+typedef TFunction<void(FSkyboxExportResponse *, int StatusCode, bool bConnectedSuccessfully)> FGetExportCallback;
+typedef TFunction<void(int StatusCode, bool bConnectedSuccessfully)> FPostExportCallback;
+
+USTRUCT()
+struct FSkyboxExportRequest
 {
   GENERATED_BODY()
-
-  UPROPERTY()
-  int id;
-
-  UPROPERTY()
-  FString name;
 };
 
 USTRUCT(BlueprintType)
@@ -36,24 +33,6 @@ struct FSkyboxStyle
 
   UPROPERTY()
   FString name;
-
-  UPROPERTY()
-  int max_char;
-
-  UPROPERTY()
-  int negative_text_max_char;
-
-  UPROPERTY()
-  FString image;
-
-  UPROPERTY()
-  int sort_order;
-
-  UPROPERTY()
-  int premium;
-
-  UPROPERTY()
-  TArray<FSkyboxStyleFamily> skybox_style_families;
 };
 
 USTRUCT()
@@ -65,16 +44,38 @@ struct FSkyboxExportType
   int id;
 
   UPROPERTY()
-  FString key;
-
-  UPROPERTY()
   FString name;
-
-  UPROPERTY()
-  bool premium_feature;
 };
 
-// ReSharper restore CppUE4CodingStandardNamingViolationWarning
+USTRUCT()
+struct FSkyboxExportResponse
+{
+  GENERATED_BODY()
+
+  UPROPERTY()
+  FString file_url;
+
+  UPROPERTY()
+  FString id;
+
+  UPROPERTY()
+  FString status;
+
+  UPROPERTY()
+  FString error_message;
+};
+
+USTRUCT()
+struct FSkyboxGenerateResponse
+{
+  GENERATED_BODY()
+};
+
+USTRUCT()
+struct FSkyboxGenerateRequest
+{
+  GENERATED_BODY()
+};
 
 UCLASS()
 class USkyboxProvider : public UObject
@@ -82,14 +83,17 @@ class USkyboxProvider : public UObject
   GENERATED_BODY()
 
 public:
-  FOnCategoriesRetrieved OnCategoriesRetrieved;
-  FOnExportTypesRetrieved OnExportTypesRetrieved;
-
   explicit USkyboxProvider();
 
-  virtual void SetClient(USKyboxAiHttpClient *InAPIClient);
-  virtual void Categories() const;
-  virtual void ExportTypes() const;
+  void SetClient(USKyboxAiHttpClient *InAPIClient);
+
+  virtual void Post(const FSkyboxGenerateRequest &Data, FPostCallback Callback) const;
+
+  virtual void GetStyles(FGetStylesCallback Callback) const;
+  virtual void GetExports(FGetExportsCallback Callback) const;
+
+  virtual void GetExport(const FString Id, FGetExportCallback Callback) const;
+  virtual void PostExport(const FSkyboxExportRequest &Data, FPostExportCallback Callback) const;
 
 protected:
   UPROPERTY()

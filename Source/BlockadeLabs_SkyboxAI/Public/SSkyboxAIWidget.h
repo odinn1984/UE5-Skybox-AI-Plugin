@@ -47,6 +47,8 @@ public:
     SLATE_EVENT(FOnSkyboxAIWidgetDataChanged, OnSkyboxAIWidgetDataChanged)
   SLATE_END_ARGS()
 
+  inline static const FText RefreshListsNotificationTitle = FText::FromString(TEXT("Refresh Lists"));
+
   void Construct(const FArguments &InArgs);
 
 private:
@@ -54,8 +56,12 @@ private:
 
   FSkyboxAIWidgetData WidgetData;
 
-  TSharedPtr<USkyboxApi> SkyboxAPI;
+  TWeakObjectPtr<USkyboxApi> SkyboxAPI;
+  TSharedPtr<SNotificationItem> RefreshListsNotification;
+  TSharedPtr<SNotificationItem> ExportSkyboxNotification;
 
+  TSharedPtr<SButton> GenerateButton;
+  TSharedPtr<SButton> RefreshListsButton;
   FSkyboxAIWidgetListView CategoryListView;
   FSkyboxAIWidgetListView ExportTypeListView;
 
@@ -73,7 +79,7 @@ private:
     const FSkyboxAIWidgetListView &OutListView,
     const TMap<int, FString> &InList,
     FSkyboxAIWidgetTuple &CurrentValue,
-    const FString &InListSource) const;
+    const FString &InListSource);
   void UpdateListViewSelection(
     const FSkyboxAIWidgetListView &ListView,
     TMap<int, FString> &Map,
@@ -103,22 +109,14 @@ private:
 
   FReply OnGenerateClicked();
   FReply OnRefreshLists();
+  void ExecuteRefreshListAsync();
 
-  static TSharedPtr<SNotificationItem> ShowSuccessMessage(
+  void ShowMessage(
+    TSharedPtr<SNotificationItem> &Notification,
+    const FText &Title,
     const FText &Message,
-    const TSharedPtr<SNotificationItem> &InNotificationItem = nullptr);
-  static TSharedPtr<SNotificationItem> ShowPendingMessage(
-    const FText &Message,
-    const TSharedPtr<SNotificationItem> &InNotificationItem = nullptr);
-  static TSharedPtr<SNotificationItem> ShowFailedMessage(
-    const FText &Message,
-    const TSharedPtr<SNotificationItem> &InNotificationItem = nullptr);
-  static TSharedPtr<SNotificationItem> ShowMessage(
-    const FText &Message,
-    const SNotificationItem::ECompletionState State,
-    const TSharedPtr<SNotificationItem> &InNotificationItem = nullptr);
+    const SNotificationItem::ECompletionState State);
 
-  void InitSkyboxAiApi();
   void NotifyWidgetDataUpdated() const;
 
   template <typename ListType, typename FindValue> bool ListContains(
