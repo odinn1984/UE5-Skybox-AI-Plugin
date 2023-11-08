@@ -1,17 +1,17 @@
-﻿#include "SSkyboxAIWidget.h"
+﻿#include "SSkyboxAiWidget.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "SkyboxAI/SKyboxAiHttpClient.h"
-#include "SkyboxAI/SkyboxProvider.h"
+#include "SkyboxAi/SKyboxAiHttpClient.h"
+#include "SkyboxAi/SkyboxProvider.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
 #include "Widgets/Input/SSearchBox.h"
 
-DEFINE_LOG_CATEGORY(SkyboxAIWidget);
+DEFINE_LOG_CATEGORY(SkyboxAiWidget);
 
-void SSkyboxAIWidget::Construct(const FArguments &InArgs)
+void SSkyboxAiWidget::Construct(const FArguments &InArgs)
 {
-  if (!SkyboxAPI.IsValid()) SkyboxAPI = NewObject<USkyboxApi>();
+  if (!SkyboxApi.IsValid()) SkyboxApi = NewObject<USkyboxApi>();
 
-  WidgetData = FSkyboxAIWidgetData(
+  WidgetData = FSkyboxAiWidgetData(
     InArgs._bEnrichPrompt,
     InArgs._Prompt,
     InArgs._NegativeText,
@@ -19,7 +19,7 @@ void SSkyboxAIWidget::Construct(const FArguments &InArgs)
     InArgs._ExportType
     );
 
-  OnSkyboxAIWidgetDataChanged = InArgs._OnSkyboxAIWidgetDataChanged;
+  OnSkyboxAiWidgetDataChanged = InArgs._OnSkyboxAiWidgetDataChanged;
 
   const TSharedPtr<SVerticalBox> Widget = SNew(SVerticalBox);
 
@@ -33,12 +33,12 @@ void SSkyboxAIWidget::Construct(const FArguments &InArgs)
   OnRefreshLists();
 }
 
-void SSkyboxAIWidget::LoadCategoriesFromList(const TMap<int, FString> &List)
+void SSkyboxAiWidget::LoadCategoriesFromList(const TMap<int, FString> &List)
 {
   LoadViewListFromMap(Categories, FilteredCategories, CategoryListView, List, WidgetData.Category, TEXT("Categories"));
 }
 
-void SSkyboxAIWidget::LoadExportTypesFromList(const TMap<int, FString> &List)
+void SSkyboxAiWidget::LoadExportTypesFromList(const TMap<int, FString> &List)
 {
   LoadViewListFromMap(
     ExportTypes,
@@ -50,12 +50,12 @@ void SSkyboxAIWidget::LoadExportTypesFromList(const TMap<int, FString> &List)
     );
 }
 
-void SSkyboxAIWidget::LoadViewListFromMap(
+void SSkyboxAiWidget::LoadViewListFromMap(
   TMap<int, FString> &OutValues,
   TArray<TSharedPtr<FText>> &OutFilteredValues,
-  const FSkyboxAIWidgetListView &OutListView,
+  const FSkyboxAiWidgetListView &OutListView,
   const TMap<int, FString> &InList,
-  FSkyboxAIWidgetTuple &CurrentValue,
+  FSkyboxAiWidgetTuple &CurrentValue,
   const FString &InListSource)
 {
   for (auto &Item : InList)
@@ -77,11 +77,11 @@ void SSkyboxAIWidget::LoadViewListFromMap(
   UpdateListViewSelection(OutListView, OutValues, OutFilteredValues, CurrentValue);
 }
 
-void SSkyboxAIWidget::UpdateListViewSelection(
-  const FSkyboxAIWidgetListView &ListView,
+void SSkyboxAiWidget::UpdateListViewSelection(
+  const FSkyboxAiWidgetListView &ListView,
   TMap<int, FString> &Map,
   TArray<TSharedPtr<FText>> &List,
-  FSkyboxAIWidgetTuple &CurrentValue) const
+  FSkyboxAiWidgetTuple &CurrentValue) const
 {
   const FString Value = std::get<TUPLE_VALUE_IDX>(CurrentValue);
   const TFunction<bool(const TSharedPtr<FText> &, const FString &)> Equals = [](
@@ -115,7 +115,7 @@ void SSkyboxAIWidget::UpdateListViewSelection(
   if (ListView.IsValid()) ListView->RequestListRefresh();
 }
 
-void SSkyboxAIWidget::AddPrompt(TSharedPtr<SVerticalBox> RootWidget)
+void SSkyboxAiWidget::AddPrompt(TSharedPtr<SVerticalBox> RootWidget)
 {
   TSharedPtr<SHorizontalBox> HBox = SNew(SHorizontalBox);
 
@@ -138,8 +138,8 @@ void SSkyboxAIWidget::AddPrompt(TSharedPtr<SVerticalBox> RootWidget)
     SNew(SMultiLineEditableTextBox).AllowContextMenu(true)
                                    .Padding(10.0f)
                                    .HintText(FText::FromString(TEXT("Enter your prompt here...\nThis is mandatory!")))
-                                   .OnTextChanged(this, &SSkyboxAIWidget::OnPromptTextChanged)
-                                   .OnTextCommitted(this, &SSkyboxAIWidget::OnPromTextCommitted)
+                                   .OnTextChanged(this, &SSkyboxAiWidget::OnPromptTextChanged)
+                                   .OnTextCommitted(this, &SSkyboxAiWidget::OnPromTextCommitted)
                                    .AutoWrapText(true)
                                    .Text(WidgetData.Prompt)
   ];
@@ -154,19 +154,19 @@ void SSkyboxAIWidget::AddPrompt(TSharedPtr<SVerticalBox> RootWidget)
     [HBox.ToSharedRef()];
 }
 
-void SSkyboxAIWidget::OnPromptTextChanged(const FText &NewText)
+void SSkyboxAiWidget::OnPromptTextChanged(const FText &NewText)
 {
   WidgetData.Prompt = NewText;
   NotifyWidgetDataUpdated();
 }
 
-void SSkyboxAIWidget::OnPromTextCommitted(const FText &NewText, ETextCommit::Type CommitType)
+void SSkyboxAiWidget::OnPromTextCommitted(const FText &NewText, ETextCommit::Type CommitType)
 {
   WidgetData.Prompt = NewText;
   NotifyWidgetDataUpdated();
 }
 
-void SSkyboxAIWidget::AddExportTypeSelector(TSharedPtr<SHorizontalBox> RootWidget)
+void SSkyboxAiWidget::AddExportTypeSelector(TSharedPtr<SHorizontalBox> RootWidget)
 {
   RootWidget->AddSlot()
             .HAlign(HAlign_Fill)
@@ -184,7 +184,7 @@ void SSkyboxAIWidget::AddExportTypeSelector(TSharedPtr<SHorizontalBox> RootWidge
     [
       SNew(SSearchBox).HintText(FText::FromString(TEXT("Select export type...")))
                       .MinDesiredWidth(200.0f)
-                      .OnTextChanged(this, &SSkyboxAIWidget::OnExportTypeSearchTextChanged)
+                      .OnTextChanged(this, &SSkyboxAiWidget::OnExportTypeSearchTextChanged)
     ]
 
     + SVerticalBox::Slot().HAlign(HAlign_Fill)
@@ -198,13 +198,13 @@ void SSkyboxAIWidget::AddExportTypeSelector(TSharedPtr<SHorizontalBox> RootWidge
         ).ItemHeight(24)
          .ListItemsSource(&FilteredExportTypes)
          .SelectionMode(ESelectionMode::SingleToggle)
-         .OnGenerateRow(this, &SSkyboxAIWidget::OnExportTypeGenerateRow)
-         .OnSelectionChanged(this, &SSkyboxAIWidget::OnExportTypeSelected)
+         .OnGenerateRow(this, &SSkyboxAiWidget::OnExportTypeGenerateRow)
+         .OnSelectionChanged(this, &SSkyboxAiWidget::OnExportTypeSelected)
     ]
   ];
 }
 
-void SSkyboxAIWidget::OnExportTypeSearchTextChanged(const FText &NewText)
+void SSkyboxAiWidget::OnExportTypeSearchTextChanged(const FText &NewText)
 {
   FilteredExportTypes.Empty();
 
@@ -221,7 +221,7 @@ void SSkyboxAIWidget::OnExportTypeSearchTextChanged(const FText &NewText)
   UpdateListViewSelection(ExportTypeListView, ExportTypes, FilteredExportTypes, WidgetData.ExportType);
 }
 
-TSharedRef<ITableRow> SSkyboxAIWidget::OnExportTypeGenerateRow(
+TSharedRef<ITableRow> SSkyboxAiWidget::OnExportTypeGenerateRow(
   TSharedPtr<FText> Item,
   const TSharedRef<STableViewBase> &OwnerTable)
 {
@@ -231,7 +231,7 @@ TSharedRef<ITableRow> SSkyboxAIWidget::OnExportTypeGenerateRow(
   ];
 }
 
-void SSkyboxAIWidget::OnExportTypeSelected(TSharedPtr<FText> InItem, ESelectInfo::Type SelectInfo)
+void SSkyboxAiWidget::OnExportTypeSelected(TSharedPtr<FText> InItem, ESelectInfo::Type SelectInfo)
 {
   if (SelectInfo == ESelectInfo::Direct) return;
 
@@ -244,7 +244,7 @@ void SSkyboxAIWidget::OnExportTypeSelected(TSharedPtr<FText> InItem, ESelectInfo
   NotifyWidgetDataUpdated();
 }
 
-void SSkyboxAIWidget::AddNegativeTextAndCategories(TSharedPtr<SVerticalBox> RootWidget)
+void SSkyboxAiWidget::AddNegativeTextAndCategories(TSharedPtr<SVerticalBox> RootWidget)
 {
   const FText HintText = FText::FromString(
     TEXT("Enter your negative text here...\nOptional, leave blank if not needed")
@@ -273,8 +273,8 @@ void SSkyboxAIWidget::AddNegativeTextAndCategories(TSharedPtr<SVerticalBox> Root
       SNew(SMultiLineEditableTextBox).AllowContextMenu(true)
                                      .Padding(10.0f)
                                      .HintText(HintText)
-                                     .OnTextChanged(this, &SSkyboxAIWidget::OnNegativeTextChanged)
-                                     .OnTextCommitted(this, &SSkyboxAIWidget::OnNegativeTextCommitted)
+                                     .OnTextChanged(this, &SSkyboxAiWidget::OnNegativeTextChanged)
+                                     .OnTextCommitted(this, &SSkyboxAiWidget::OnNegativeTextCommitted)
                                      .AutoWrapText(true)
                                      .Text(WidgetData.NegativeText)
     ]
@@ -290,19 +290,19 @@ void SSkyboxAIWidget::AddNegativeTextAndCategories(TSharedPtr<SVerticalBox> Root
     [HBox.ToSharedRef()];
 }
 
-void SSkyboxAIWidget::OnNegativeTextChanged(const FText &NewText)
+void SSkyboxAiWidget::OnNegativeTextChanged(const FText &NewText)
 {
   WidgetData.NegativeText = NewText;
   NotifyWidgetDataUpdated();
 }
 
-void SSkyboxAIWidget::OnNegativeTextCommitted(const FText &NewText, ETextCommit::Type CommitType)
+void SSkyboxAiWidget::OnNegativeTextCommitted(const FText &NewText, ETextCommit::Type CommitType)
 {
   WidgetData.NegativeText = NewText;
   NotifyWidgetDataUpdated();
 }
 
-void SSkyboxAIWidget::AddCategorySelector(TSharedPtr<SHorizontalBox> RootWidget)
+void SSkyboxAiWidget::AddCategorySelector(TSharedPtr<SHorizontalBox> RootWidget)
 {
   RootWidget->AddSlot()
             .HAlign(HAlign_Fill)
@@ -320,7 +320,7 @@ void SSkyboxAIWidget::AddCategorySelector(TSharedPtr<SHorizontalBox> RootWidget)
     [
       SNew(SSearchBox).HintText(FText::FromString(TEXT("Select categories...")))
                       .MinDesiredWidth(200.0f)
-                      .OnTextChanged(this, &SSkyboxAIWidget::OnCategorySearchTextChanged)
+                      .OnTextChanged(this, &SSkyboxAiWidget::OnCategorySearchTextChanged)
     ]
 
     + SVerticalBox::Slot().HAlign(HAlign_Fill)
@@ -334,13 +334,13 @@ void SSkyboxAIWidget::AddCategorySelector(TSharedPtr<SHorizontalBox> RootWidget)
         ).ItemHeight(24)
          .ListItemsSource(&FilteredCategories)
          .SelectionMode(ESelectionMode::SingleToggle)
-         .OnGenerateRow(this, &SSkyboxAIWidget::OnCategoryGenerateRow)
-         .OnSelectionChanged(this, &SSkyboxAIWidget::OnCategorySelected)
+         .OnGenerateRow(this, &SSkyboxAiWidget::OnCategoryGenerateRow)
+         .OnSelectionChanged(this, &SSkyboxAiWidget::OnCategorySelected)
     ]
   ];
 }
 
-void SSkyboxAIWidget::OnCategorySearchTextChanged(const FText &NewText)
+void SSkyboxAiWidget::OnCategorySearchTextChanged(const FText &NewText)
 {
   FilteredCategories.Empty();
 
@@ -357,7 +357,7 @@ void SSkyboxAIWidget::OnCategorySearchTextChanged(const FText &NewText)
   UpdateListViewSelection(CategoryListView, Categories, FilteredCategories, WidgetData.Category);
 }
 
-TSharedRef<ITableRow> SSkyboxAIWidget::OnCategoryGenerateRow(
+TSharedRef<ITableRow> SSkyboxAiWidget::OnCategoryGenerateRow(
   TSharedPtr<FText> Item,
   const TSharedRef<STableViewBase> &OwnerTable)
 {
@@ -367,7 +367,7 @@ TSharedRef<ITableRow> SSkyboxAIWidget::OnCategoryGenerateRow(
   ];
 }
 
-void SSkyboxAIWidget::OnCategorySelected(TSharedPtr<FText> InItem, ESelectInfo::Type SelectInfo)
+void SSkyboxAiWidget::OnCategorySelected(TSharedPtr<FText> InItem, ESelectInfo::Type SelectInfo)
 {
   if (SelectInfo == ESelectInfo::Direct) return;
 
@@ -380,7 +380,7 @@ void SSkyboxAIWidget::OnCategorySelected(TSharedPtr<FText> InItem, ESelectInfo::
   NotifyWidgetDataUpdated();
 }
 
-void SSkyboxAIWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
+void SSkyboxAiWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
 {
   RootWidget->AddSlot()
             .HAlign(HAlign_Center)
@@ -396,7 +396,7 @@ void SSkyboxAIWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
                             .Padding(40.0f, 10.0f)
     [
       SAssignNew(RefreshListsButton, SButton).Text(FText::FromString(TEXT("Refresh Lists")))
-                                             .OnClicked(this, &SSkyboxAIWidget::OnRefreshLists)
+                                             .OnClicked(this, &SSkyboxAiWidget::OnRefreshLists)
     ]
 
     + SHorizontalBox::Slot().HAlign(HAlign_Center)
@@ -405,7 +405,7 @@ void SSkyboxAIWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
                             .Padding(40.0f, 10.0f)
     [
       SAssignNew(GenerateButton, SButton).Text(FText::FromString(TEXT("Generate HDRI")))
-                                         .OnClicked(this, &SSkyboxAIWidget::OnGenerateClicked)
+                                         .OnClicked(this, &SSkyboxAiWidget::OnGenerateClicked)
     ]
 
     + SHorizontalBox::Slot().HAlign(HAlign_Center)
@@ -414,7 +414,7 @@ void SSkyboxAIWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
                             .Padding(0.0f, 10.0f)
     [
       SNew(SCheckBox).ToolTipText(FText::FromString(TEXT("Enable enriching prompt with AI")))
-                     .OnCheckStateChanged(this, &SSkyboxAIWidget::OnEnrichPromptChanged)
+                     .OnCheckStateChanged(this, &SSkyboxAiWidget::OnEnrichPromptChanged)
                      .IsChecked(WidgetData.bEnrichPrompt ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
     ]
 
@@ -428,18 +428,51 @@ void SSkyboxAIWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
   ];
 }
 
-void SSkyboxAIWidget::OnEnrichPromptChanged(ECheckBoxState NewState)
+void SSkyboxAiWidget::OnEnrichPromptChanged(ECheckBoxState NewState)
 {
   WidgetData.bEnrichPrompt = (NewState == ECheckBoxState::Checked);
   NotifyWidgetDataUpdated();
 }
 
-FReply SSkyboxAIWidget::OnGenerateClicked()
+FReply SSkyboxAiWidget::OnGenerateClicked()
 {
+  if (GenerateButton.IsValid()) GenerateButton->SetEnabled(false);
+
+  ShowMessage(
+    GenerateSkyboxNotification,
+    GenerateSkyboxNotificationTitle,
+    FText::FromString(TEXT("Generating Skybox...")),
+    SNotificationItem::CS_Pending
+    );
+
+  // Start generate API call
+  // When API call is done, start polling for generate status
+  // when status is success start download of the image
+  // when done update message with success
+  // if failure happens update message with failure
+  // should probably also save the download URL on disk so that if something goes wrong the user can download it
+  // either failure or success, re-enable the generate button
+
+  FSkyboxGenerateRequest PostRequest;
+  PostRequest.prompt = WidgetData.Prompt.ToString();
+  PostRequest.negative_text = WidgetData.NegativeText.ToString();
+  PostRequest.enhance_prompt = WidgetData.bEnrichPrompt;
+  PostRequest.skybox_style_id = std::get<TUPLE_KEY_IDX>(WidgetData.Category);
+
+  SkyboxApi->Skybox()->Post(PostRequest, [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+  {
+    if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+    {
+      return;
+    }
+
+  });
+
+
   return FReply::Handled();
 }
 
-FReply SSkyboxAIWidget::OnRefreshLists()
+FReply SSkyboxAiWidget::OnRefreshLists()
 {
   Categories.Empty();
   FilteredCategories.Empty();
@@ -455,9 +488,10 @@ FReply SSkyboxAIWidget::OnRefreshLists()
   return FReply::Handled();
 }
 
-void SSkyboxAIWidget::ExecuteRefreshListAsync()
+void SSkyboxAiWidget::ExecuteRefreshListAsync()
 {
-  RefreshListsButton->SetEnabled(false);
+  if (RefreshListsButton.IsValid()) RefreshListsButton->SetEnabled(false);
+
   ShowMessage(
     RefreshListsNotification,
     RefreshListsNotificationTitle,
@@ -479,7 +513,6 @@ void SSkyboxAIWidget::ExecuteRefreshListAsync()
       {
         const bool bOk = *FailureCounter.Get() == 0;
 
-        RefreshListsButton->SetEnabled(true);
         ShowMessage(
           RefreshListsNotification,
           RefreshListsNotificationTitle,
@@ -488,11 +521,13 @@ void SSkyboxAIWidget::ExecuteRefreshListAsync()
           FText::FromString(TEXT("Some items failed, See Message Log")),
           bOk ? SNotificationItem::CS_Success : SNotificationItem::CS_Fail
           );
+
+        if (RefreshListsButton.IsValid()) RefreshListsButton->SetEnabled(true);
       }
       );
   };
 
-  SkyboxAPI.Get()->Skybox()->GetStyles(
+  SkyboxApi.Get()->Skybox()->GetStyles(
     [this, OnApiCallComplete](FSkyboxAiStyles &Styles, int StatusCode, bool bConnectedSuccessfully)
     {
       if (StatusCode >= 300 || !bConnectedSuccessfully) return OnApiCallComplete(true);
@@ -502,7 +537,7 @@ void SSkyboxAIWidget::ExecuteRefreshListAsync()
     }
     );
 
-  SkyboxAPI.Get()->Skybox()->GetExports(
+  SkyboxApi.Get()->Skybox()->GetExports(
     [this, OnApiCallComplete](FSkyboxAiExportTypes &Types, int StatusCode, bool bConnectedSuccessfully)
     {
       if (StatusCode >= 300 || !bConnectedSuccessfully) return OnApiCallComplete(true);
@@ -513,7 +548,7 @@ void SSkyboxAIWidget::ExecuteRefreshListAsync()
     );
 }
 
-void SSkyboxAIWidget::ShowMessage(
+void SSkyboxAiWidget::ShowMessage(
   TSharedPtr<SNotificationItem> &Notification,
   const FText &Title,
   const FText &Message,
@@ -528,6 +563,7 @@ void SSkyboxAIWidget::ShowMessage(
 
     FNotificationInfo Info(FText::FromString(TEXT("")));
 
+    Info.bUseLargeFont = true;
     Info.bFireAndForget = false;
     Info.FadeOutDuration = 1.0f;
     Info.ExpireDuration = 5.0f;
@@ -553,8 +589,8 @@ void SSkyboxAIWidget::ShowMessage(
   }
 }
 
-void SSkyboxAIWidget::NotifyWidgetDataUpdated() const
+void SSkyboxAiWidget::NotifyWidgetDataUpdated() const
 {
-  if (OnSkyboxAIWidgetDataChanged.ExecuteIfBound(WidgetData)) return;
-  UE_LOG(SkyboxAIWidget, Warning, TEXT("Failed to execute OnSkyboxAIWidgetDataChanged"));
+  if (OnSkyboxAiWidgetDataChanged.ExecuteIfBound(WidgetData)) return;
+  UE_LOG(SkyboxAiWidget, Warning, TEXT("Failed to execute OnSkyboxAiWidgetDataChanged"));
 }

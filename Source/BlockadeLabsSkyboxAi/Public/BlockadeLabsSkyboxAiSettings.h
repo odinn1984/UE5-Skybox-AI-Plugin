@@ -2,24 +2,22 @@
 
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
-#include "BlockadeLabs_SkyboxAISettings.generated.h"
+#include "BlockadeLabsSkyboxAiSettings.generated.h"
 
 UCLASS(config = "BlackdaleLabs", meta = (DisplayName = "Blockade Labs Skybox AI"))
-class UBlockadeLabs_SkyboxAISettings : public UDeveloperSettings
+class UBlockadeLabsSkyboxAiSettings : public UDeveloperSettings
 {
   GENERATED_BODY()
 
 public:
   UPROPERTY(config, EditAnywhere, Category = "Blockdale Labs Skybox API")
-  FString APIKey;
+  FString ApiKey;
 
   UPROPERTY(config, EditAnywhere, Category = "Blockdale Labs Skybox API")
-  FString APIEndpoint = TEXT("https://backend.blockadelabs.com/api/v1");
+  FString ApiEndpoint = TEXT("https://backend.blockadelabs.com/api/v1");
 
   UPROPERTY(config, EditAnywhere, Category = "Blockdale Labs Skybox API")
   FString SaveDirectory = TEXT("/Game/Content/SkyboxAI/Exports");
 
-  UBlockadeLabs_SkyboxAISettings(const FObjectInitializer &ObjectInitializer);
-
-  virtual void PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent) override;
+  UBlockadeLabsSkyboxAiSettings(const FObjectInitializer &ObjectInitializer);
 };

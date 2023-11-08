@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class BlockadeLabs_SkyboxAI : ModuleRules
+public class BlockadeLabsSkyboxAi : ModuleRules
 {
-	public BlockadeLabs_SkyboxAI(ReadOnlyTargetRules Target) : base(Target)
+	public BlockadeLabsSkyboxAi(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 

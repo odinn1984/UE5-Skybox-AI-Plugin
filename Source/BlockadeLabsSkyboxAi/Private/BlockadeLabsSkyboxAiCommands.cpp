@@ -1,14 +1,14 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "BlockadeLabs_SkyboxAICommands.h"
+#include "..\Public\BlockadeLabsSkyboxAiCommands.h"
 
-#define LOCTEXT_NAMESPACE "FBlockadeLabs_SkyboxAIModule"
+#define LOCTEXT_NAMESPACE "FBlockadeLabsSkyboxAiModule"
 
-void FBlockadeLabs_SkyboxAICommands::RegisterCommands()
+void FBlockadeLabsSkyboxAiCommands::RegisterCommands()
 {
   UI_COMMAND(
     OpenPluginWindow,
-    "BlockadeLabs_SkyboxAI",
+    "BlockadeLabsSkyboxAi",
     "Bring up BlockadeLabs SkyboxAI window",
     EUserInterfaceActionType::Button,
     FInputChord()

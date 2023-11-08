@@ -6,7 +6,7 @@
 #include "Styling/SlateStyle.h"
 
 /**  */
-class FBlockadeLabs_SkyboxAIStyle
+class FBlockadeLabsSkyboxAiStyle
 {
 public:
   static void Initialize();

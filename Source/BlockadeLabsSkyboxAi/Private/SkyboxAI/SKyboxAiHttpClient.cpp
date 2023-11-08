@@ -1,32 +1,94 @@
 ﻿#include "SKyboxAiHttpClient.h"
-#include "BlockadeLabs_SkyboxAISettings.h"
+#include "BlockadeLabsSkyboxAiSettings.h"
 #include "SkyboxProvider.h"
 #include "HttpModule.h"
+#include "ImagineProvider.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 
-DEFINE_LOG_CATEGORY(SkyboxAIAPI);
+DEFINE_LOG_CATEGORY(SkyboxAiAPI);
 
 USkyboxApi::USkyboxApi()
 {
-  UBlockadeLabs_SkyboxAISettings *EditorSettings = GetMutableDefault<UBlockadeLabs_SkyboxAISettings>();
-  const FString APIKey = EditorSettings->APIKey;
-  const FString APIEndpoint = EditorSettings->APIEndpoint;
+  UBlockadeLabsSkyboxAiSettings *EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
+  const FString APIKey = EditorSettings->ApiKey;
+  const FString APIEndpoint = EditorSettings->ApiEndpoint;
 
   EditorSettings->OnSettingChanged().AddUObject(this, &USkyboxApi::OnSettingsChanged);
 
-  APIClient = CreateDefaultSubobject<USKyboxAiHttpClient>(TEXT("SkyboxAiHttpClient"));
-  APIClient->SetApiKey(APIKey);
-  if (!APIEndpoint.Equals(TEXT(""))) APIClient->SetApiEndpoint(APIEndpoint);
+  ApiClient = CreateDefaultSubobject<USKyboxAiHttpClient>(TEXT("SkyboxAiHttpClient"));
+  ApiClient->SetApiKey(APIKey);
+  if (!APIEndpoint.Equals(TEXT(""))) ApiClient->SetApiEndpoint(APIEndpoint);
 
   SkyboxProvider = CreateDefaultSubobject<USkyboxProvider>(TEXT("SkyboxProvider"));
-  SkyboxProvider->SetClient(APIClient);
+  SkyboxProvider->SetClient(ApiClient);
+
+  ImagineProvider = CreateDefaultSubobject<UImagineProvider>(TEXT("ImagineProvider"));
+  ImagineProvider->SetClient(ApiClient);
+}
+
+void USkyboxApi::SaveExportedImage(const FString &Id) const
+{
+  if (!IsClientValid()) return;
+
+  Imagine()->GetRequests(
+    Id,
+    [this](FImagineGetExportsResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+    {
+      if (!ValidateExportedImageCall(Response, StatusCode, bConnectedSuccessfully)) return;
+
+      const FString ImageUrl = Response->request.file_url;
+      const FString Title = Response->request.title;
+      const FString SavePath = FPaths::Combine(SaveDirectory, Title);
+      const FString SaveDir = FPaths::GetPath(SavePath);
+
+      if (!FPaths::DirectoryExists(SaveDir))
+      {
+        FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SaveDir);
+      }
+
+      // DownloadImage(ImageUrl, [this, SavePath](TArray<uint8> ExportedImage)
+      // {
+      //   FFileHelper::SaveArrayToFile(ExportedImage, *SavePath);
+      // });
+    }
+    );
 }
 
 void USkyboxApi::OnSettingsChanged(UObject *Object, FPropertyChangedEvent &Event)
 {
-  APIClient->SetApiKey(CastChecked<UBlockadeLabs_SkyboxAISettings>(Object)->APIKey);
-  APIClient->SetApiEndpoint(CastChecked<UBlockadeLabs_SkyboxAISettings>(Object)->APIEndpoint);
+  ApiClient->SetApiKey(CastChecked<UBlockadeLabsSkyboxAiSettings>(Object)->ApiKey);
+  ApiClient->SetApiEndpoint(CastChecked<UBlockadeLabsSkyboxAiSettings>(Object)->ApiEndpoint);
+  SaveDirectory = CastChecked<UBlockadeLabsSkyboxAiSettings>(Object)->SaveDirectory;
+}
+
+bool USkyboxApi::IsClientValid() const
+{
+  if (ApiClient == nullptr)
+  {
+    FMessageLog(SkyboxAiHttpClient::GMessageLogName).Error(FText::FromString(TEXT("Client wasn't initialized")));
+    return false;
+  }
+
+  return true;
+}
+
+bool USkyboxApi::ValidateExportedImageCall(
+  FImagineGetExportsResponse *Response,
+  int StatusCode,
+  bool bConnectedSuccessfully) const
+{
+  if (!bConnectedSuccessfully || Response == nullptr || StatusCode >= 300)
+  {
+    return false;
+  }
+
+  if (Response->request.status != TEXT("complete"))
+  {
+    return false;
+  }
+
+  return true;
 }
 
 USKyboxAiHttpClient::USKyboxAiHttpClient()
@@ -41,12 +103,12 @@ void USKyboxAiHttpClient::SetHttpModule(FHttpModule *InHttp)
 
 void USKyboxAiHttpClient::SetApiKey(FString InAPIKey)
 {
-  APIKey = InAPIKey;
+  ApiKey = InAPIKey;
 }
 
 void USKyboxAiHttpClient::SetApiEndpoint(FString InEndpointOverride)
 {
-  APIEndpoint = InEndpointOverride;
+  ApiEndpoint = InEndpointOverride;
 }
 
 void USKyboxAiHttpClient::MakeAPIRequest(
@@ -56,11 +118,11 @@ void USKyboxAiHttpClient::MakeAPIRequest(
   FSkyboxAiHttpCallback Callback) const
 {
   const TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http->CreateRequest();
-  const FString URL = APIEndpoint + Endpoint;
+  const FString URL = ApiEndpoint + Endpoint;
 
   Request->SetURL(URL);
   Request->SetVerb(Headers.Method);
-  Request->SetHeader("x-api-key", APIKey);
+  Request->SetHeader("x-api-key", ApiKey);
   Request->SetHeader("accept", Headers.Accept);
   Request->SetHeader("Content-Type", Headers.ContentType);
 
@@ -101,7 +163,7 @@ void USKyboxAiHttpClient::HandleHttpResponse(FHttpResponseRef Response) const
 
   EMessageSeverity::Type Severity = EMessageSeverity::Warning;
   FString ErrorMessage = TEXT("Unexpected error occurred");
-  FSkyboxApiError *ParsedResponse = DeserializeJSONToUStruct<FSkyboxApiError>(Response->GetContentAsString());
+  FSkyboxApiError *ParsedResponse = DeserializeJsonToUStruct<FSkyboxApiError>(Response->GetContentAsString());
 
   if (ParsedResponse != nullptr) ErrorMessage = ParsedResponse->error;
   if (StatusCode >= 500) Severity = EMessageSeverity::Error;

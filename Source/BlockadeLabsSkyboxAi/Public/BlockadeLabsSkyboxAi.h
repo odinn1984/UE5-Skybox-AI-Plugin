@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SSkyboxAIWidget.h"
+#include "SSkyboxAiWidget.h"
 #include "Modules/ModuleManager.h"
 
-class FBlockadeLabs_SkyboxAIModule : public IModuleInterface
+class FBlockadeLabsSkyboxAiModule : public IModuleInterface
 {
 public:
   virtual void StartupModule() override;
@@ -14,14 +14,14 @@ public:
 
 private:
   TSharedPtr<FUICommandList> PluginCommands;
-  TSharedPtr<SSkyboxAIWidget> SkyboxWidget;
-  TSharedPtr<FSkyboxAIWidgetData> SkyboxWidgetData;
+  TSharedPtr<SSkyboxAiWidget> SkyboxWidget;
+  TSharedPtr<FSkyboxAiWidgetData> SkyboxWidgetData;
 
   void OpenPluginMenuItemClicked();
   TSharedRef<SDockTab> OnSpawnPluginTab(const FSpawnTabArgs &SpawnTabArgs);
 
   void RegisterMenus();
-  TSharedRef<SSkyboxAIWidget> GetSkyboxWidget();
+  TSharedRef<SSkyboxAiWidget> GetSkyboxWidget();
 
-  void OnSkyboxAIWidgetDataChanged(const FSkyboxAIWidgetData &Data);
+  void OnSkyboxAiWidgetDataChanged(const FSkyboxAiWidgetData &Data);
 };

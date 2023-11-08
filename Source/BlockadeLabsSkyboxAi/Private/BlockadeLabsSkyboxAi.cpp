@@ -1,49 +1,49 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "BlockadeLabs_SkyboxAI.h"
-#include "BlockadeLabs_SkyboxAIStyle.h"
-#include "BlockadeLabs_SkyboxAICommands.h"
-#include "BlockadeLabs_SkyboxAISettings.h"
+#include "BlockadeLabsSkyboxAi.h"
+#include "BlockadeLabsSkyboxAiStyle.h"
+#include "BlockadeLabsSkyboxAiCommands.h"
+#include "BlockadeLabsSkyboxAiSettings.h"
 #include "ISettingsModule.h"
 #include "MessageLogModule.h"
-#include "SSkyboxAIWidget.h"
+#include "SSkyboxAiWidget.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Input/SButton.h"
 #include "ToolMenus.h"
-#include "SkyboxAI/SKyboxAiHttpClient.h"
+#include "SkyboxAi/SKyboxAiHttpClient.h"
 
-static const FName BlockadeLabs_SkyboxAITabName("BlockadeLabs SkyboxAI");
+static const FName BlockadeLabsSkyboxAiTabName("BlockadeLabs SkyboxAI");
 
-#define LOCTEXT_NAMESPACE "FBlockadeLabs_SkyboxAIModule"
+#define LOCTEXT_NAMESPACE "BlockadeLabsSkyboxAiModule"
 
-void FBlockadeLabs_SkyboxAIModule::StartupModule()
+void FBlockadeLabsSkyboxAiModule::StartupModule()
 {
-  FBlockadeLabs_SkyboxAIStyle::Initialize();
-  FBlockadeLabs_SkyboxAIStyle::ReloadTextures();
+  FBlockadeLabsSkyboxAiStyle::Initialize();
+  FBlockadeLabsSkyboxAiStyle::ReloadTextures();
 
-  FBlockadeLabs_SkyboxAICommands::Register();
+  FBlockadeLabsSkyboxAiCommands::Register();
 
-  SkyboxWidgetData = MakeShareable(new FSkyboxAIWidgetData);
+  SkyboxWidgetData = MakeShareable(new FSkyboxAiWidgetData);
 
   PluginCommands = MakeShareable(new FUICommandList);
 
   PluginCommands->MapAction(
-    FBlockadeLabs_SkyboxAICommands::Get().OpenPluginWindow,
-    FExecuteAction::CreateRaw(this, &FBlockadeLabs_SkyboxAIModule::OpenPluginMenuItemClicked),
+    FBlockadeLabsSkyboxAiCommands::Get().OpenPluginWindow,
+    FExecuteAction::CreateRaw(this, &FBlockadeLabsSkyboxAiModule::OpenPluginMenuItemClicked),
     FCanExecuteAction()
     );
 
   UToolMenus::RegisterStartupCallback(
-    FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FBlockadeLabs_SkyboxAIModule::RegisterMenus)
+    FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FBlockadeLabsSkyboxAiModule::RegisterMenus)
     );
 
   FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
-                            BlockadeLabs_SkyboxAITabName,
-                            FOnSpawnTab::CreateRaw(this, &FBlockadeLabs_SkyboxAIModule::OnSpawnPluginTab)
+                            BlockadeLabsSkyboxAiTabName,
+                            FOnSpawnTab::CreateRaw(this, &FBlockadeLabsSkyboxAiModule::OnSpawnPluginTab)
                             )
-                          .SetDisplayName(LOCTEXT("FBlockadeLabs_SkyboxAITabTitle", "BlockadeLabs SkyboxAI"))
+                          .SetDisplayName(LOCTEXT("BlockadeLabsSkyboxAiTabTitle", "Blockade Labs SkyboxAI"))
                           .SetMenuType(ETabSpawnerMenuType::Hidden);
 
   if (ISettingsModule *SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
@@ -54,7 +54,7 @@ void FBlockadeLabs_SkyboxAIModule::StartupModule()
       "SkyboxAI",
       LOCTEXT("RuntimeSettingsName", "Blockade Labs SkyboxAI"),
       LOCTEXT("RuntimeSettingsDescription", "API Settings for Skybox AI API"),
-      GetMutableDefault<UBlockadeLabs_SkyboxAISettings>()
+      GetMutableDefault<UBlockadeLabsSkyboxAiSettings>()
       );
   }
 
@@ -68,24 +68,24 @@ void FBlockadeLabs_SkyboxAIModule::StartupModule()
   MessageLogModule.RegisterLogListing(
     "SkyboxAI",
     FText::Format(
-      NSLOCTEXT("{0}", "SkyboxAIAPILogLabel", "Blockade Labs SkyboxAI"),
+      NSLOCTEXT("{0}", "SkyboxAiAPILogLabel", "Blockade Labs SkyboxAI"),
       FText::FromName(SkyboxAiHttpClient::GMessageLogName)
       ),
     InitOptions
     );
 }
 
-void FBlockadeLabs_SkyboxAIModule::ShutdownModule()
+void FBlockadeLabsSkyboxAiModule::ShutdownModule()
 {
   UToolMenus::UnRegisterStartupCallback(this);
 
   UToolMenus::UnregisterOwner(this);
 
-  FBlockadeLabs_SkyboxAIStyle::Shutdown();
+  FBlockadeLabsSkyboxAiStyle::Shutdown();
 
-  FBlockadeLabs_SkyboxAICommands::Unregister();
+  FBlockadeLabsSkyboxAiCommands::Unregister();
 
-  FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(BlockadeLabs_SkyboxAITabName);
+  FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(BlockadeLabsSkyboxAiTabName);
 
   if (ISettingsModule *SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
   {
@@ -99,19 +99,19 @@ void FBlockadeLabs_SkyboxAIModule::ShutdownModule()
   }
 }
 
-void FBlockadeLabs_SkyboxAIModule::OpenPluginMenuItemClicked()
+void FBlockadeLabsSkyboxAiModule::OpenPluginMenuItemClicked()
 {
-  FGlobalTabmanager::Get()->TryInvokeTab(BlockadeLabs_SkyboxAITabName);
+  FGlobalTabmanager::Get()->TryInvokeTab(BlockadeLabsSkyboxAiTabName);
 }
 
-TSharedRef<SDockTab> FBlockadeLabs_SkyboxAIModule::OnSpawnPluginTab(const FSpawnTabArgs &SpawnTabArgs)
+TSharedRef<SDockTab> FBlockadeLabsSkyboxAiModule::OnSpawnPluginTab(const FSpawnTabArgs &SpawnTabArgs)
 {
   return SNew(SDockTab)
     .TabRole(ETabRole::NomadTab)
     [GetSkyboxWidget()];
 }
 
-void FBlockadeLabs_SkyboxAIModule::RegisterMenus()
+void FBlockadeLabsSkyboxAiModule::RegisterMenus()
 {
   FToolMenuOwnerScoped OwnerScoped(this);
 
@@ -119,7 +119,12 @@ void FBlockadeLabs_SkyboxAIModule::RegisterMenus()
     UToolMenu *Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
     {
       FToolMenuSection &Section = Menu->FindOrAddSection("BlockadeLabs");
-      Section.AddMenuEntryWithCommandList(FBlockadeLabs_SkyboxAICommands::Get().OpenPluginWindow, PluginCommands);
+      Section.AddMenuEntryWithCommandList(
+        FBlockadeLabsSkyboxAiCommands::Get().OpenPluginWindow,
+        PluginCommands,
+        FText::FromString("Blockade Labs SkyboxAI"),
+        FText::FromString("Generate a Skybox using Blockade Labs SkyboxAI and export it to the Content folder")
+        );
     }
   }
 
@@ -129,7 +134,7 @@ void FBlockadeLabs_SkyboxAIModule::RegisterMenus()
       FToolMenuSection &Section = ToolbarMenu->FindOrAddSection("Settings");
       {
         FToolMenuEntry &Entry = Section.AddEntry(
-          FToolMenuEntry::InitToolBarButton(FBlockadeLabs_SkyboxAICommands::Get().OpenPluginWindow)
+          FToolMenuEntry::InitToolBarButton(FBlockadeLabsSkyboxAiCommands::Get().OpenPluginWindow)
           );
         Entry.SetCommandList(PluginCommands);
       }
@@ -137,18 +142,18 @@ void FBlockadeLabs_SkyboxAIModule::RegisterMenus()
   }
 }
 
-TSharedRef<SSkyboxAIWidget> FBlockadeLabs_SkyboxAIModule::GetSkyboxWidget()
+TSharedRef<SSkyboxAiWidget> FBlockadeLabsSkyboxAiModule::GetSkyboxWidget()
 {
-  return SAssignNew(SkyboxWidget, SSkyboxAIWidget)
+  return SAssignNew(SkyboxWidget, SSkyboxAiWidget)
     .Prompt(SkyboxWidgetData->Prompt)
     .NegativeText(SkyboxWidgetData->NegativeText)
     .Category(SkyboxWidgetData->Category)
     .ExportType(SkyboxWidgetData->ExportType)
     .bEnrichPrompt(SkyboxWidgetData->bEnrichPrompt)
-    .OnSkyboxAIWidgetDataChanged_Raw(this, &FBlockadeLabs_SkyboxAIModule::OnSkyboxAIWidgetDataChanged);
+    .OnSkyboxAiWidgetDataChanged_Raw(this, &FBlockadeLabsSkyboxAiModule::OnSkyboxAiWidgetDataChanged);
 }
 
-void FBlockadeLabs_SkyboxAIModule::OnSkyboxAIWidgetDataChanged(const FSkyboxAIWidgetData &Data)
+void FBlockadeLabsSkyboxAiModule::OnSkyboxAiWidgetDataChanged(const FSkyboxAiWidgetData &Data)
 {
   SkyboxWidgetData->Category = Data.Category;
   SkyboxWidgetData->ExportType = Data.ExportType;
@@ -159,4 +164,4 @@ void FBlockadeLabs_SkyboxAIModule::OnSkyboxAIWidgetDataChanged(const FSkyboxAIWi
 
 #undef LOCTEXT_NAMESPACE
 
-IMPLEMENT_MODULE(FBlockadeLabs_SkyboxAIModule, BlockadeLabs_SkyboxAI)
+IMPLEMENT_MODULE(FBlockadeLabsSkyboxAiModule, BlockadeLabsSkyboxAi)

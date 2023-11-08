@@ -5,13 +5,15 @@
 #include "JsonObjectConverter.h"
 #include "SkyboxAiHttpClient.generated.h"
 
+struct FImagineGetExportsResponse;
 class FHttpModule;
 typedef TFunction<void(const FString &Body, int StatusCode, bool bConnectedSuccessfully)> FSkyboxAiHttpCallback;
 
 class USkyboxProvider;
+class UImagineProvider;
 class USKyboxAiHttpClient;
 
-DECLARE_LOG_CATEGORY_EXTERN(SkyboxAIAPI, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(SkyboxAiAPI, Log, All);
 
 namespace SkyboxAiHttpClient
 {
@@ -66,16 +68,31 @@ public:
   explicit USkyboxApi();
 
   FORCEINLINE USkyboxProvider *Skybox() const { return SkyboxProvider; }
+  FORCEINLINE UImagineProvider *Imagine() const { return ImagineProvider; }
+
+  void SaveExportedImage(const FString &Id) const;
 
 protected:
   virtual void OnSettingsChanged(UObject *Object, FPropertyChangedEvent &Event);
+  virtual bool IsClientValid() const;
 
 private:
   UPROPERTY()
-  TObjectPtr<USKyboxAiHttpClient> APIClient;
+  TObjectPtr<USKyboxAiHttpClient> ApiClient;
 
   UPROPERTY()
   TObjectPtr<USkyboxProvider> SkyboxProvider;
+
+  UPROPERTY()
+  TObjectPtr<UImagineProvider> ImagineProvider;
+
+  UPROPERTY()
+  FString SaveDirectory = TEXT("");
+
+  bool ValidateExportedImageCall(
+    FImagineGetExportsResponse *Response,
+    int StatusCode,
+    bool bConnectedSuccessfully) const;
 };
 
 UCLASS()
@@ -86,8 +103,8 @@ class USKyboxAiHttpClient : public UObject
 public:
   USKyboxAiHttpClient();
 
-  FORCEINLINE FString GetAPIKey() const { return APIKey; }
-  FORCEINLINE FString GetAPIEndpoint() const { return APIEndpoint; }
+  FORCEINLINE FString GetAPIKey() const { return ApiKey; }
+  FORCEINLINE FString GetAPIEndpoint() const { return ApiEndpoint; }
 
   void SetHttpModule(FHttpModule *InHttp);
   void SetApiKey(FString InAPIKey);
@@ -99,20 +116,33 @@ public:
     const FString &Body,
     FSkyboxAiHttpCallback Callback) const;
 
-  template <typename T> static FString *SerializeJSON(const T &Object);
-  template <typename T> static FString *SerializeJSON(const TArray<T> &Object);
-  template <typename T> static T *DeserializeJSONToUStruct(const FString &Body);
-  template <typename T> static TArray<T> DeserializeJSONToUStructArray(const FString &Body);
+  template <typename T> static FString *SerializeJson(const T &Object);
+  template <typename T> static FString *SerializeJson(const TArray<T> &Object);
+  template <typename T> static T *DeserializeJsonToUStruct(const FString &Body);
+  template <typename T> static TArray<T> DeserializeJsonToUStructArray(const FString &Body);
 
 private:
-  FString APIKey;
-  FString APIEndpoint = TEXT("https://backend.blockadelabs.com/api/v1");
+  FString ApiKey;
+  FString ApiEndpoint = TEXT("https://backend.blockadelabs.com/api/v1");
   FHttpModule *Http;
 
   void HandleHttpResponse(FHttpResponseRef Res) const;
 };
 
-template <typename T> FString *USKyboxAiHttpClient::SerializeJSON(const T &Object)
+template <typename T> FString *USKyboxAiHttpClient::SerializeJson(const T &Object)
+{
+  FString OutputString;
+
+  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutputString, 0, 0))
+  {
+    FMessageLog(SkyboxAiHttpClient::GMessageLogName).Error(FText::FromString(TEXT("Serialization from JSON failed")));
+    return nullptr;
+  }
+
+  return &OutputString;
+}
+
+template <typename T> FString *USKyboxAiHttpClient::SerializeJson(const TArray<T> &Object)
 {
   FString OutputString;
 
@@ -127,22 +157,7 @@ template <typename T> FString *USKyboxAiHttpClient::SerializeJSON(const T &Objec
   return &OutputString;
 }
 
-template <typename T> FString *USKyboxAiHttpClient::SerializeJSON(const TArray<T> &Object)
-{
-  FString OutputString;
-
-  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutputString, 0, 0))
-  {
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName)
-      .Error(FText::FromString(TEXT("Serialization from JSON failed")))
-      ->AddToken(FTextToken::Create(FText::FromString(Object.ToString())));
-    return nullptr;
-  }
-
-  return &OutputString;
-}
-
-template <typename T> T *USKyboxAiHttpClient::DeserializeJSONToUStruct(const FString &Body)
+template <typename T> T *USKyboxAiHttpClient::DeserializeJsonToUStruct(const FString &Body)
 {
   T OutObject;
 
@@ -157,7 +172,7 @@ template <typename T> T *USKyboxAiHttpClient::DeserializeJSONToUStruct(const FSt
   return &OutObject;
 }
 
-template <typename T> TArray<T> USKyboxAiHttpClient::DeserializeJSONToUStructArray(const FString &Body)
+template <typename T> TArray<T> USKyboxAiHttpClient::DeserializeJsonToUStructArray(const FString &Body)
 {
   TArray<T> OutObject;
 

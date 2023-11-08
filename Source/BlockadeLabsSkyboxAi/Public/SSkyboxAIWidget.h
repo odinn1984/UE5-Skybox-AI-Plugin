@@ -3,67 +3,68 @@
 #include "CoreMinimal.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
-typedef TSharedPtr<SListView<TSharedPtr<FText>>> FSkyboxAIWidgetListView;
-typedef std::tuple<int, FString> FSkyboxAIWidgetTuple;
+typedef TSharedPtr<SListView<TSharedPtr<FText>>> FSkyboxAiWidgetListView;
+typedef std::tuple<int, FString> FSkyboxAiWidgetTuple;
 
 #define TUPLE_KEY_IDX 0
 #define TUPLE_VALUE_IDX 1
 
 class USkyboxApi;
-struct FSkyboxAIWidgetData;
+struct FSkyboxAiWidgetData;
 
-DECLARE_LOG_CATEGORY_EXTERN(SkyboxAIWidget, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(SkyboxAiWidget, Log, All);
 
-DECLARE_DELEGATE_OneParam(FOnSkyboxAIWidgetDataChanged, const FSkyboxAIWidgetData &);
+DECLARE_DELEGATE_OneParam(FOnSkyboxAiWidgetDataChanged, const FSkyboxAiWidgetData &);
 
-struct FSkyboxAIWidgetData
+struct FSkyboxAiWidgetData
 {
   bool bEnrichPrompt = false;
 
   FText Prompt;
   FText NegativeText;
-  FSkyboxAIWidgetTuple Category;
-  FSkyboxAIWidgetTuple ExportType;
+  FSkyboxAiWidgetTuple Category;
+  FSkyboxAiWidgetTuple ExportType;
 };
 
-class SSkyboxAIWidget : public SCompoundWidget
+class SSkyboxAiWidget : public SCompoundWidget
 {
 public:
-  SLATE_BEGIN_ARGS(SSkyboxAIWidget)
+  SLATE_BEGIN_ARGS(SSkyboxAiWidget)
       : _bEnrichPrompt(false),
         _Prompt(FText::FromString(TEXT(""))),
         _NegativeText(FText::FromString(TEXT(""))),
         _Category(std::make_tuple(0, TEXT(""))),
         _ExportType(std::make_tuple(0, TEXT(""))),
-        _OnSkyboxAIWidgetDataChanged()
+        _OnSkyboxAiWidgetDataChanged()
     {
     }
 
     SLATE_ARGUMENT(bool, bEnrichPrompt)
     SLATE_ARGUMENT(FText, Prompt)
     SLATE_ARGUMENT(FText, NegativeText)
-    SLATE_ARGUMENT(FSkyboxAIWidgetTuple, Category)
-    SLATE_ARGUMENT(FSkyboxAIWidgetTuple, ExportType)
-    SLATE_EVENT(FOnSkyboxAIWidgetDataChanged, OnSkyboxAIWidgetDataChanged)
+    SLATE_ARGUMENT(FSkyboxAiWidgetTuple, Category)
+    SLATE_ARGUMENT(FSkyboxAiWidgetTuple, ExportType)
+    SLATE_EVENT(FOnSkyboxAiWidgetDataChanged, OnSkyboxAiWidgetDataChanged)
   SLATE_END_ARGS()
 
   inline static const FText RefreshListsNotificationTitle = FText::FromString(TEXT("Refresh Lists"));
+  inline static const FText GenerateSkyboxNotificationTitle = FText::FromString(TEXT("Generate Skybox"));
 
   void Construct(const FArguments &InArgs);
 
 private:
-  FOnSkyboxAIWidgetDataChanged OnSkyboxAIWidgetDataChanged;
+  FOnSkyboxAiWidgetDataChanged OnSkyboxAiWidgetDataChanged;
 
-  FSkyboxAIWidgetData WidgetData;
+  FSkyboxAiWidgetData WidgetData;
 
-  TWeakObjectPtr<USkyboxApi> SkyboxAPI;
+  TWeakObjectPtr<USkyboxApi> SkyboxApi;
   TSharedPtr<SNotificationItem> RefreshListsNotification;
-  TSharedPtr<SNotificationItem> ExportSkyboxNotification;
+  TSharedPtr<SNotificationItem> GenerateSkyboxNotification;
 
   TSharedPtr<SButton> GenerateButton;
   TSharedPtr<SButton> RefreshListsButton;
-  FSkyboxAIWidgetListView CategoryListView;
-  FSkyboxAIWidgetListView ExportTypeListView;
+  FSkyboxAiWidgetListView CategoryListView;
+  FSkyboxAiWidgetListView ExportTypeListView;
 
   TMap<int, FString> Categories;
   TArray<TSharedPtr<FText>> FilteredCategories;
@@ -76,15 +77,15 @@ private:
   void LoadViewListFromMap(
     TMap<int, FString> &OutValues,
     TArray<TSharedPtr<FText>> &OutFilteredValues,
-    const FSkyboxAIWidgetListView &OutListView,
+    const FSkyboxAiWidgetListView &OutListView,
     const TMap<int, FString> &InList,
-    FSkyboxAIWidgetTuple &CurrentValue,
+    FSkyboxAiWidgetTuple &CurrentValue,
     const FString &InListSource);
   void UpdateListViewSelection(
-    const FSkyboxAIWidgetListView &ListView,
+    const FSkyboxAiWidgetListView &ListView,
     TMap<int, FString> &Map,
     TArray<TSharedPtr<FText>> &List,
-    FSkyboxAIWidgetTuple &CurrentValue) const;
+    FSkyboxAiWidgetTuple &CurrentValue) const;
 
   void AddPrompt(TSharedPtr<SVerticalBox> RootWidget);
   void OnPromptTextChanged(const FText &NewText);
@@ -130,7 +131,7 @@ private:
     TFunction<bool(const ListType &, const FindValue &)> Equals) const;
 };
 
-template <typename ListType, typename FindValue> bool SSkyboxAIWidget::ListContains(
+template <typename ListType, typename FindValue> bool SSkyboxAiWidget::ListContains(
   TArray<ListType> &List,
   const FindValue &Value,
   TFunction<bool(const ListType &, const FindValue &)> Equals) const
@@ -138,7 +139,7 @@ template <typename ListType, typename FindValue> bool SSkyboxAIWidget::ListConta
   return FindInList<ListType, FindValue>(List, Value, Equals) != INDEX_NONE;
 }
 
-template <typename ListType, typename FindValue> int SSkyboxAIWidget::FindInList(
+template <typename ListType, typename FindValue> int SSkyboxAiWidget::FindInList(
   TArray<ListType> &List,
   const FindValue &Value,
   TFunction<bool(const ListType &, const FindValue &)> Equals) const

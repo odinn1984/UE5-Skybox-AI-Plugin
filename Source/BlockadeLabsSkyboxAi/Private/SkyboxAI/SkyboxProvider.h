@@ -11,16 +11,19 @@ struct FSkyboxExportResponse;
 typedef const TMap<int, FString> FSkyboxAiStyles;
 typedef const TMap<int, FString> FSkyboxAiExportTypes;
 
-typedef TFunction<void(int StatusCode, bool bConnectedSuccessfully)> FPostCallback;
+typedef TFunction<void(FSkyboxGenerateResponse *, int StatusCode, bool bConnectedSuccessfully)> FPostCallback;
 typedef TFunction<void(FSkyboxAiStyles &, int StatusCode, bool bConnectedSuccessfully)> FGetStylesCallback;
 typedef TFunction<void(FSkyboxAiExportTypes &, int StatusCode, bool bConnectedSuccessfully)> FGetExportsCallback;
 typedef TFunction<void(FSkyboxExportResponse *, int StatusCode, bool bConnectedSuccessfully)> FGetExportCallback;
-typedef TFunction<void(int StatusCode, bool bConnectedSuccessfully)> FPostExportCallback;
+typedef TFunction<void(FSkyboxExportResponse *, int StatusCode, bool bConnectedSuccessfully)> FPostExportCallback;
 
 USTRUCT()
 struct FSkyboxExportRequest
 {
   GENERATED_BODY()
+
+  UPROPERTY()
+  int id;
 };
 
 USTRUCT(BlueprintType)
@@ -69,12 +72,30 @@ USTRUCT()
 struct FSkyboxGenerateResponse
 {
   GENERATED_BODY()
+
+  UPROPERTY()
+  FString obfuscated_id;
+
+  UPROPERTY()
+  FString status;
 };
 
 USTRUCT()
 struct FSkyboxGenerateRequest
 {
   GENERATED_BODY()
+
+  UPROPERTY()
+  FString prompt;
+
+  UPROPERTY()
+  FString negative_text;
+
+  UPROPERTY()
+  bool enhance_prompt;
+
+  UPROPERTY()
+  int skybox_style_id;
 };
 
 UCLASS()
@@ -97,5 +118,7 @@ public:
 
 protected:
   UPROPERTY()
-  TObjectPtr<USKyboxAiHttpClient> APIClient;
+  TObjectPtr<USKyboxAiHttpClient> ApiClient;
+
+  virtual bool IsClientValid() const;
 };
