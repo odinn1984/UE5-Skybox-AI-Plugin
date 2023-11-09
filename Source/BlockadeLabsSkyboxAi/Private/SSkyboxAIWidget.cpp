@@ -21,6 +21,8 @@ void SSkyboxAiWidget::Construct(const FArguments &InArgs)
 
       if (!PluginSettings->bEnablePremiumContent) EnhancePromptCheckbox->SetIsChecked(ECheckBoxState::Unchecked);
       EnhancePromptCheckbox->SetEnabled(PluginSettings->bEnablePremiumContent);
+
+      OnRefreshLists();
     }
     );
 
