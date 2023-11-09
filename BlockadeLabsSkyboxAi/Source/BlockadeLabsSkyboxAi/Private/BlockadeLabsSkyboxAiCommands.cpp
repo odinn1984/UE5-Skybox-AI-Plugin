@@ -2,7 +2,7 @@
 
 #include "..\Public\BlockadeLabsSkyboxAiCommands.h"
 
-#define LOCTEXT_NAMESPACE "FBlockadeLabsSkyboxAiModule"
+#define LOCTEXT_NAMESPACE "BlockadeLabsSkyboxAiModule"
 
 void FBlockadeLabsSkyboxAiCommands::RegisterCommands()
 {

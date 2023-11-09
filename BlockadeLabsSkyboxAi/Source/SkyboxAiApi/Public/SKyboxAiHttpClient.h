@@ -5,17 +5,13 @@
 #include "JsonObjectConverter.h"
 #include "SkyboxAiHttpClient.generated.h"
 
-struct FImagineGetExportsResponse;
-class FHttpModule;
 typedef TFunction<void(const FString &Body, int StatusCode, bool bConnectedSuccessfully)> FSkyboxAiHttpCallback;
 
-class USkyboxProvider;
-class UImagineProvider;
-class USKyboxAiHttpClient;
+DECLARE_LOG_CATEGORY_EXTERN(SkyboxAiHttpClient, Log, All);
 
-DECLARE_LOG_CATEGORY_EXTERN(SkyboxAiAPI, Log, All);
+class FHttpModule;
 
-namespace SkyboxAiHttpClient
+namespace SkyboxAiHttpClientDefinitions
 {
   const static FName GMessageLogName = TEXT("SkyboxAI");
 
@@ -41,58 +37,17 @@ struct FSkyboxAiHttpHeaders
   GENERATED_BODY()
 
   UPROPERTY()
-  FString Method = SkyboxAiHttpClient::HTTPVerbs::GGet;
+  FString Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GGet;
 
   UPROPERTY()
-  FString Accept = SkyboxAiHttpClient::ContentTypes::GJson;
+  FString Accept = SkyboxAiHttpClientDefinitions::ContentTypes::GJson;
 
   UPROPERTY()
-  FString ContentType = SkyboxAiHttpClient::ContentTypes::GJson;
-};
-
-USTRUCT(BlueprintType)
-struct FSkyboxApiError
-{
-  GENERATED_BODY()
-
-  UPROPERTY()
-  FString error;
+  FString ContentType = SkyboxAiHttpClientDefinitions::ContentTypes::GJson;
 };
 
 UCLASS()
-class USkyboxApi : public UObject
-{
-  GENERATED_BODY()
-
-public:
-  explicit USkyboxApi();
-
-  FORCEINLINE USkyboxProvider *Skybox() const { return SkyboxProvider; }
-  FORCEINLINE UImagineProvider *Imagine() const { return ImagineProvider; }
-
-  void SaveExportedImage(const FString &Id) const;
-
-protected:
-  virtual bool IsClientValid() const;
-
-private:
-  UPROPERTY()
-  TObjectPtr<USKyboxAiHttpClient> ApiClient;
-
-  UPROPERTY()
-  TObjectPtr<USkyboxProvider> SkyboxProvider;
-
-  UPROPERTY()
-  TObjectPtr<UImagineProvider> ImagineProvider;
-
-  bool ValidateExportedImageCall(
-    FImagineGetExportsResponse *Response,
-    int StatusCode,
-    bool bConnectedSuccessfully) const;
-};
-
-UCLASS()
-class USKyboxAiHttpClient : public UObject
+class SKYBOXAIAPI_API USKyboxAiHttpClient : public UObject
 {
   GENERATED_BODY()
 
@@ -124,7 +79,7 @@ template <typename T> FString *USKyboxAiHttpClient::SerializeJson(const T &Objec
 
   if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutputString, 0, 0))
   {
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName).Error(FText::FromString(TEXT("Serialization from JSON failed")));
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(FText::FromString(TEXT("Serialization from JSON failed")));
     return nullptr;
   }
 
@@ -137,7 +92,7 @@ template <typename T> FString *USKyboxAiHttpClient::SerializeJson(const TArray<T
 
   if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutputString, 0, 0))
   {
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName)
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
       .Error(FText::FromString(TEXT("Serialization from JSON failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Object.ToString())));
     return nullptr;
@@ -152,7 +107,7 @@ template <typename T> T *USKyboxAiHttpClient::DeserializeJsonToUStruct(const FSt
 
   if (!FJsonObjectConverter::JsonObjectStringToUStruct(Body, &OutObject, 0, 0))
   {
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName)
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
       .Error(FText::FromString(TEXT("Deserialization to JSON failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Body)));
     return nullptr;
@@ -167,7 +122,7 @@ template <typename T> TArray<T> USKyboxAiHttpClient::DeserializeJsonToUStructArr
 
   if (!FJsonObjectConverter::JsonArrayStringToUStruct(Body, &OutObject, 0, 0))
   {
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName)
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
       .Error(FText::FromString(TEXT("Deserialization to JSON failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Body)));
     return TArray<T>();

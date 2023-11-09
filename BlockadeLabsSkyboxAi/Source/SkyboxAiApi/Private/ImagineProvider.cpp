@@ -23,7 +23,7 @@ bool UImagineProvider::IsClientValid() const
 {
   if (ApiClient == nullptr)
   {
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName).Error(FText::FromString(TEXT("Client wasn't initialized")));
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(FText::FromString(TEXT("Client wasn't initialized")));
     return false;
   }
 

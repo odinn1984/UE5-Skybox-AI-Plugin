@@ -21,7 +21,7 @@ void USkyboxProvider::Post(const FSkyboxGenerateRequest &Data, FPostCallback Cal
   if (!IsClientValid()) return;
 
   FSkyboxAiHttpHeaders Headers = FSkyboxAiHttpHeaders();
-  Headers.Method = SkyboxAiHttpClient::HTTPVerbs::GPost;
+  Headers.Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GPost;
 
   const FString Endpoint = TEXT("/skybox/");
 
@@ -30,7 +30,7 @@ void USkyboxProvider::Post(const FSkyboxGenerateRequest &Data, FPostCallback Cal
     const FString ErrorMessage = TEXT("Invalid request body");
     constexpr int StatusCode = 422;
 
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName)
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
       .Message(EMessageSeverity::Error, FText::FromString(TEXT("Post Request Failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Endpoint)))
       ->AddToken(FTextToken::Create(FText::FromString(FString::SanitizeFloat(StatusCode))))
@@ -122,7 +122,7 @@ void USkyboxProvider::PostExport(const FSkyboxExportRequest &Data, FPostExportCa
   if (!IsClientValid()) return;
 
   FSkyboxAiHttpHeaders Headers = FSkyboxAiHttpHeaders();
-  Headers.Method = SkyboxAiHttpClient::HTTPVerbs::GPost;
+  Headers.Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GPost;
 
   const FString Endpoint = TEXT("/skybox/export/");
 
@@ -131,7 +131,7 @@ void USkyboxProvider::PostExport(const FSkyboxExportRequest &Data, FPostExportCa
     const FString ErrorMessage = TEXT("Invalid request body");
     constexpr int StatusCode = 422;
 
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName)
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
       .Message(EMessageSeverity::Error, FText::FromString(TEXT("PostExport Request Failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Endpoint)))
       ->AddToken(FTextToken::Create(FText::FromString(FString::SanitizeFloat(StatusCode))))
@@ -157,7 +157,7 @@ bool USkyboxProvider::IsClientValid() const
 {
   if (ApiClient == nullptr)
   {
-    FMessageLog(SkyboxAiHttpClient::GMessageLogName).Error(FText::FromString(TEXT("Client wasn't initialized")));
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(FText::FromString(TEXT("Client wasn't initialized")));
     return false;
   }
 

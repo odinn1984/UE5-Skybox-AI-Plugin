@@ -27,10 +27,7 @@ public class BlockadeLabsSkyboxAi : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
-				"Http",
-				"Json",
-				"JsonUtilities"
+				"Core"
 				// ... add other public dependencies that you statically link with here ...
 			}
 		);
@@ -49,7 +46,7 @@ public class BlockadeLabsSkyboxAi : ModuleRules
 				"Slate",
 				"SlateCore",
 				"DeveloperSettings",
-				"MessageLog",
+				"SkyboxAiApi"
 				// ... add private dependencies that you statically link with here ...
 			}
 		);

@@ -41,7 +41,7 @@ struct FImagineGetExportsResponse
 };
 
 UCLASS()
-class UImagineProvider : public UObject
+class SKYBOXAIAPI_API UImagineProvider : public UObject
 {
   GENERATED_BODY()
 

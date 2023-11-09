@@ -1,8 +1,8 @@
-﻿#include "BlockadeLabsSkyboxAiSettings.h"
-#include "SSkyboxAiWidget.h"
+﻿#include "SSkyboxAiWidget.h"
+#include "BlockadeLabsSkyboxAiSettings.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "SkyboxAi/SKyboxAiHttpClient.h"
-#include "SkyboxAi/SkyboxProvider.h"
+#include "SkyboxAiApi.h"
+#include "SkyboxProvider.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
 #include "Widgets/Input/SSearchBox.h"
 
@@ -12,19 +12,22 @@ void SSkyboxAiWidget::Construct(const FArguments &InArgs)
 {
   if (!SkyboxApi.IsValid()) SkyboxApi = NewObject<USkyboxApi>();
 
-  PluginSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
-  PluginSettings->OnSettingChanged().AddLambda(
-    [this](UObject *Object, struct FPropertyChangedEvent &Event)
-    {
-      if (Event.GetPropertyName() != GET_MEMBER_NAME_CHECKED(UBlockadeLabsSkyboxAiSettings, bEnablePremiumContent)) return;
-      if (!EnhancePromptCheckbox.IsValid()) return;
+  if (!PluginSettings.IsValid())
+  {
+    PluginSettings = NewObject<UBlockadeLabsSkyboxAiSettings>();
+    PluginSettings->OnSettingChanged().AddLambda(
+      [this](UObject *Object, struct FPropertyChangedEvent &Event)
+      {
+        if (Event.GetPropertyName() != GET_MEMBER_NAME_CHECKED(UBlockadeLabsSkyboxAiSettings, bEnablePremiumContent)) return;
+        if (!EnhancePromptCheckbox.IsValid() || !PluginSettings.IsValid()) return;
 
-      if (!PluginSettings->bEnablePremiumContent) EnhancePromptCheckbox->SetIsChecked(ECheckBoxState::Unchecked);
-      EnhancePromptCheckbox->SetEnabled(PluginSettings->bEnablePremiumContent);
+        if (!PluginSettings->bEnablePremiumContent) EnhancePromptCheckbox->SetIsChecked(ECheckBoxState::Unchecked);
+        EnhancePromptCheckbox->SetEnabled(PluginSettings->bEnablePremiumContent);
 
-      OnRefreshLists();
-    }
-    );
+        OnRefreshLists();
+      }
+      );
+  }
 
   WidgetData = FSkyboxAiWidgetData(
     InArgs._bEnrichPrompt,

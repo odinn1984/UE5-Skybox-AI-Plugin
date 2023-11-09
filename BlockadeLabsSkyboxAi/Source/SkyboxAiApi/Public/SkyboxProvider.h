@@ -105,7 +105,7 @@ struct FSkyboxGenerateRequest
 };
 
 UCLASS()
-class USkyboxProvider : public UObject
+class SKYBOXAIAPI_API USkyboxProvider : public UObject
 {
   GENERATED_BODY()
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BlockadeLabsSkyboxAiSettings.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
 typedef TSharedPtr<SListView<TSharedPtr<FText>>> FSkyboxAiWidgetListView;
