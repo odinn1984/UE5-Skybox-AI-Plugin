@@ -36,6 +36,9 @@ struct FSkyboxStyle
 
   UPROPERTY()
   FString name;
+
+  UPROPERTY()
+  int premium;
 };
 
 USTRUCT()
@@ -48,6 +51,9 @@ struct FSkyboxExportType
 
   UPROPERTY()
   FString name;
+
+  UPROPERTY()
+  bool premium_feature;
 };
 
 USTRUCT()
@@ -121,4 +127,5 @@ protected:
   TObjectPtr<USKyboxAiHttpClient> ApiClient;
 
   virtual bool IsClientValid() const;
+  virtual bool ShouldShowPremiumContent() const;
 };

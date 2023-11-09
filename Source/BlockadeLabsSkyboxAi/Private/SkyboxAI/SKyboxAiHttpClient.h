@@ -73,7 +73,6 @@ public:
   void SaveExportedImage(const FString &Id) const;
 
 protected:
-  virtual void OnSettingsChanged(UObject *Object, FPropertyChangedEvent &Event);
   virtual bool IsClientValid() const;
 
 private:
@@ -85,9 +84,6 @@ private:
 
   UPROPERTY()
   TObjectPtr<UImagineProvider> ImagineProvider;
-
-  UPROPERTY()
-  FString SaveDirectory = TEXT("");
 
   bool ValidateExportedImageCall(
     FImagineGetExportsResponse *Response,
@@ -103,12 +99,7 @@ class USKyboxAiHttpClient : public UObject
 public:
   USKyboxAiHttpClient();
 
-  FORCEINLINE FString GetAPIKey() const { return ApiKey; }
-  FORCEINLINE FString GetAPIEndpoint() const { return ApiEndpoint; }
-
   void SetHttpModule(FHttpModule *InHttp);
-  void SetApiKey(FString InAPIKey);
-  void SetApiEndpoint(FString InEndpointOverride);
 
   void MakeAPIRequest(
     const FString &Endpoint,
@@ -122,8 +113,6 @@ public:
   template <typename T> static TArray<T> DeserializeJsonToUStructArray(const FString &Body);
 
 private:
-  FString ApiKey;
-  FString ApiEndpoint = TEXT("https://backend.blockadelabs.com/api/v1");
   FHttpModule *Http;
 
   void HandleHttpResponse(FHttpResponseRef Res) const;

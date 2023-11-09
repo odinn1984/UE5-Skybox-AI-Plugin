@@ -1,4 +1,5 @@
-﻿#include "SSkyboxAiWidget.h"
+﻿#include "BlockadeLabsSkyboxAiSettings.h"
+#include "SSkyboxAiWidget.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "SkyboxAi/SKyboxAiHttpClient.h"
 #include "SkyboxAi/SkyboxProvider.h"
@@ -10,6 +11,18 @@ DEFINE_LOG_CATEGORY(SkyboxAiWidget);
 void SSkyboxAiWidget::Construct(const FArguments &InArgs)
 {
   if (!SkyboxApi.IsValid()) SkyboxApi = NewObject<USkyboxApi>();
+
+  PluginSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
+  PluginSettings->OnSettingChanged().AddLambda(
+    [this](UObject *Object, struct FPropertyChangedEvent &Event)
+    {
+      if (Event.GetPropertyName() != GET_MEMBER_NAME_CHECKED(UBlockadeLabsSkyboxAiSettings, bEnablePremiumContent)) return;
+      if (!EnhancePromptCheckbox.IsValid()) return;
+
+      if (!PluginSettings->bEnablePremiumContent) EnhancePromptCheckbox->SetIsChecked(ECheckBoxState::Unchecked);
+      EnhancePromptCheckbox->SetEnabled(PluginSettings->bEnablePremiumContent);
+    }
+    );
 
   WidgetData = FSkyboxAiWidgetData(
     InArgs._bEnrichPrompt,
@@ -413,9 +426,10 @@ void SSkyboxAiWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
                             .AutoWidth()
                             .Padding(0.0f, 10.0f)
     [
-      SNew(SCheckBox).ToolTipText(FText::FromString(TEXT("Enable enriching prompt with AI")))
+      SAssignNew(EnhancePromptCheckbox, SCheckBox).ToolTipText(FText::FromString(TEXT("Enable enriching prompt with AI")))
                      .OnCheckStateChanged(this, &SSkyboxAiWidget::OnEnrichPromptChanged)
                      .IsChecked(WidgetData.bEnrichPrompt ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                     .IsEnabled(PluginSettings->bEnablePremiumContent)
     ]
 
     + SHorizontalBox::Slot().HAlign(HAlign_Center)
@@ -459,14 +473,17 @@ FReply SSkyboxAiWidget::OnGenerateClicked()
   PostRequest.enhance_prompt = WidgetData.bEnrichPrompt;
   PostRequest.skybox_style_id = std::get<TUPLE_KEY_IDX>(WidgetData.Category);
 
-  SkyboxApi->Skybox()->Post(PostRequest, [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
-  {
-    if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+  SkyboxApi->Skybox()->Post(
+    PostRequest,
+    [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
     {
-      return;
-    }
+      if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+      {
+        return;
+      }
 
-  });
+    }
+    );
 
 
   return FReply::Handled();

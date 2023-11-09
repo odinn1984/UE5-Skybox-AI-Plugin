@@ -10,15 +10,7 @@ DEFINE_LOG_CATEGORY(SkyboxAiAPI);
 
 USkyboxApi::USkyboxApi()
 {
-  UBlockadeLabsSkyboxAiSettings *EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
-  const FString APIKey = EditorSettings->ApiKey;
-  const FString APIEndpoint = EditorSettings->ApiEndpoint;
-
-  EditorSettings->OnSettingChanged().AddUObject(this, &USkyboxApi::OnSettingsChanged);
-
-  ApiClient = CreateDefaultSubobject<USKyboxAiHttpClient>(TEXT("SkyboxAiHttpClient"));
-  ApiClient->SetApiKey(APIKey);
-  if (!APIEndpoint.Equals(TEXT(""))) ApiClient->SetApiEndpoint(APIEndpoint);
+  ApiClient = CreateDefaultSubobject<USKyboxAiHttpClient>("APIClient");
 
   SkyboxProvider = CreateDefaultSubobject<USkyboxProvider>(TEXT("SkyboxProvider"));
   SkyboxProvider->SetClient(ApiClient);
@@ -37,6 +29,8 @@ void USkyboxApi::SaveExportedImage(const FString &Id) const
     {
       if (!ValidateExportedImageCall(Response, StatusCode, bConnectedSuccessfully)) return;
 
+      const UBlockadeLabsSkyboxAiSettings *EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
+      const FString SaveDirectory = EditorSettings->SaveDirectory;
       const FString ImageUrl = Response->request.file_url;
       const FString Title = Response->request.title;
       const FString SavePath = FPaths::Combine(SaveDirectory, Title);
@@ -53,13 +47,6 @@ void USkyboxApi::SaveExportedImage(const FString &Id) const
       // });
     }
     );
-}
-
-void USkyboxApi::OnSettingsChanged(UObject *Object, FPropertyChangedEvent &Event)
-{
-  ApiClient->SetApiKey(CastChecked<UBlockadeLabsSkyboxAiSettings>(Object)->ApiKey);
-  ApiClient->SetApiEndpoint(CastChecked<UBlockadeLabsSkyboxAiSettings>(Object)->ApiEndpoint);
-  SaveDirectory = CastChecked<UBlockadeLabsSkyboxAiSettings>(Object)->SaveDirectory;
 }
 
 bool USkyboxApi::IsClientValid() const
@@ -101,22 +88,16 @@ void USKyboxAiHttpClient::SetHttpModule(FHttpModule *InHttp)
   Http = InHttp;
 }
 
-void USKyboxAiHttpClient::SetApiKey(FString InAPIKey)
-{
-  ApiKey = InAPIKey;
-}
-
-void USKyboxAiHttpClient::SetApiEndpoint(FString InEndpointOverride)
-{
-  ApiEndpoint = InEndpointOverride;
-}
-
 void USKyboxAiHttpClient::MakeAPIRequest(
   const FString &Endpoint,
   const FSkyboxAiHttpHeaders &Headers,
   const FString &Body,
   FSkyboxAiHttpCallback Callback) const
 {
+  const UBlockadeLabsSkyboxAiSettings *EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
+  const FString ApiKey = EditorSettings->ApiKey;
+  const FString ApiEndpoint = EditorSettings->ApiEndpoint;
+
   const TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http->CreateRequest();
   const FString URL = ApiEndpoint + Endpoint;
 

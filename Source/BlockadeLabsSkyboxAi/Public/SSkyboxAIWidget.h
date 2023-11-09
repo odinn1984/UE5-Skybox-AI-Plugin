@@ -58,11 +58,13 @@ private:
   FSkyboxAiWidgetData WidgetData;
 
   TWeakObjectPtr<USkyboxApi> SkyboxApi;
+  TWeakObjectPtr<UBlockadeLabsSkyboxAiSettings> PluginSettings;
   TSharedPtr<SNotificationItem> RefreshListsNotification;
   TSharedPtr<SNotificationItem> GenerateSkyboxNotification;
 
   TSharedPtr<SButton> GenerateButton;
   TSharedPtr<SButton> RefreshListsButton;
+  TSharedPtr<SCheckBox> EnhancePromptCheckbox;
   FSkyboxAiWidgetListView CategoryListView;
   FSkyboxAiWidgetListView ExportTypeListView;
 

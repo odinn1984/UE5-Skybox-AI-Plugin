@@ -1,4 +1,6 @@
 ﻿#include "SkyboxProvider.h"
+
+#include "BlockadeLabsSkyboxAiSettings.h"
 #include "SKyboxAiHttpClient.h"
 
 USkyboxProvider::USkyboxProvider()
@@ -22,7 +24,6 @@ void USkyboxProvider::Post(const FSkyboxGenerateRequest &Data, FPostCallback Cal
   Headers.Method = SkyboxAiHttpClient::HTTPVerbs::GPost;
 
   const FString Endpoint = TEXT("/skybox/");
-  const FString URL = ApiClient->GetAPIEndpoint() + Endpoint;
 
   if (const FString *BodyPtr = USKyboxAiHttpClient::SerializeJson<FSkyboxGenerateRequest>(Data); BodyPtr == nullptr)
   {
@@ -31,7 +32,7 @@ void USkyboxProvider::Post(const FSkyboxGenerateRequest &Data, FPostCallback Cal
 
     FMessageLog(SkyboxAiHttpClient::GMessageLogName)
       .Message(EMessageSeverity::Error, FText::FromString(TEXT("Post Request Failed")))
-      ->AddToken(FTextToken::Create(FText::FromString(URL)))
+      ->AddToken(FTextToken::Create(FText::FromString(Endpoint)))
       ->AddToken(FTextToken::Create(FText::FromString(FString::SanitizeFloat(StatusCode))))
       ->AddToken(FTextToken::Create(FText::FromString(ErrorMessage)));
 
@@ -66,6 +67,7 @@ void USkyboxProvider::GetStyles(FGetStylesCallback Callback) const
       for (TArray<FSkyboxStyle> Response = USKyboxAiHttpClient::DeserializeJsonToUStructArray<FSkyboxStyle>(Body);
            FSkyboxStyle &Item : Response)
       {
+        if (!ShouldShowPremiumContent() && Item.premium == 1) continue;
         Styles.Add(Item.id, Item.name);
       }
 
@@ -90,6 +92,7 @@ void USkyboxProvider::GetExports(FGetExportsCallback Callback) const
              Body
              ); FSkyboxExportType &Type : Response)
       {
+        if (!ShouldShowPremiumContent() && Type.premium_feature) continue;
         Types.Add(Type.id, Type.name);
       }
 
@@ -122,7 +125,6 @@ void USkyboxProvider::PostExport(const FSkyboxExportRequest &Data, FPostExportCa
   Headers.Method = SkyboxAiHttpClient::HTTPVerbs::GPost;
 
   const FString Endpoint = TEXT("/skybox/export/");
-  const FString URL = ApiClient->GetAPIEndpoint() + Endpoint;
 
   if (const FString *BodyPtr = USKyboxAiHttpClient::SerializeJson<FSkyboxExportRequest>(Data); BodyPtr == nullptr)
   {
@@ -131,7 +133,7 @@ void USkyboxProvider::PostExport(const FSkyboxExportRequest &Data, FPostExportCa
 
     FMessageLog(SkyboxAiHttpClient::GMessageLogName)
       .Message(EMessageSeverity::Error, FText::FromString(TEXT("PostExport Request Failed")))
-      ->AddToken(FTextToken::Create(FText::FromString(URL)))
+      ->AddToken(FTextToken::Create(FText::FromString(Endpoint)))
       ->AddToken(FTextToken::Create(FText::FromString(FString::SanitizeFloat(StatusCode))))
       ->AddToken(FTextToken::Create(FText::FromString(ErrorMessage)));
 
@@ -160,4 +162,10 @@ bool USkyboxProvider::IsClientValid() const
   }
 
   return true;
+}
+
+bool USkyboxProvider::ShouldShowPremiumContent() const
+{
+  const UBlockadeLabsSkyboxAiSettings *EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
+  return EditorSettings->bEnablePremiumContent;
 }
