@@ -131,6 +131,7 @@ private:
   void OnEnrichPromptChanged(ECheckBoxState NewState);
 
   FReply OnGenerateClicked();
+  bool ValidateGenerateData() const;
   FReply OnRefreshLists();
   void ExecuteRefreshListAsync();
 

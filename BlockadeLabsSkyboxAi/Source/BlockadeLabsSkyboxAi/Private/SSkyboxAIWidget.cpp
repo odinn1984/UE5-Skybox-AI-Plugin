@@ -189,7 +189,7 @@ void SSkyboxAiWidget::AddExportTypeSelector(TSharedPtr<SHorizontalBox> RootWidge
         SListView<TSharedPtr<FText>>
         ).ItemHeight(24)
          .ListItemsSource(&FilteredExportTypes)
-         .SelectionMode(ESelectionMode::SingleToggle)
+         .SelectionMode(ESelectionMode::Single)
          .OnGenerateRow(this, &SSkyboxAiWidget::OnExportTypeGenerateRow)
          .OnSelectionChanged(this, &SSkyboxAiWidget::OnExportTypeSelected)
     ]
@@ -490,7 +490,9 @@ void SSkyboxAiWidget::OnEnrichPromptChanged(ECheckBoxState NewState)
 
 FReply SSkyboxAiWidget::OnGenerateClicked()
 {
-  if (GenerateButton.IsValid()) GenerateButton->SetEnabled(false);
+  if (!ValidateGenerateData()) return FReply::Handled();
+
+  // if (GenerateButton.IsValid()) GenerateButton->SetEnabled(false);
 
   ShowMessage(
     GenerateSkyboxNotification,
@@ -508,26 +510,83 @@ FReply SSkyboxAiWidget::OnGenerateClicked()
   // should probably also save the download URL on disk so that if something goes wrong the user can download it
   // either failure or success, re-enable the generate button
 
-  FSkyboxGenerateRequest PostRequest;
-  PostRequest.prompt = WidgetData.Prompt.ToString();
-  PostRequest.negative_text = WidgetData.NegativeText.ToString();
-  PostRequest.enhance_prompt = WidgetData.bEnrichPrompt;
-  PostRequest.skybox_style_id = std::get<TUPLE_KEY_IDX>(WidgetData.Category);
-
-  SkyboxApi->Skybox()->Post(
-    PostRequest,
-    [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
-    {
-      if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
-      {
-        return;
-      }
-
-    }
-    );
+  // FSkyboxGenerateRequest PostRequest;
+  // PostRequest.prompt = WidgetData.Prompt.ToString();
+  // PostRequest.negative_text = WidgetData.NegativeText.ToString();
+  // PostRequest.enhance_prompt = WidgetData.bEnrichPrompt;
+  // PostRequest.skybox_style_id = std::get<TUPLE_KEY_IDX>(WidgetData.Category);
+  //
+  // SkyboxApi->Skybox()->Post(
+  //   PostRequest,
+  //   [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+  //   {
+  //     if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+  //     {
+  //       return;
+  //     }
+  //
+  //   }
+  //   );
 
 
   return FReply::Handled();
+}
+
+bool SSkyboxAiWidget::ValidateGenerateData() const
+{
+  const int PromptMaxLen = std::get<TUPLE_PROMPT_MAX_LEN_IDX>(WidgetData.Category);
+  const int NegativeTextMaxLen = std::get<TUPLE_NEGATIVE_TEXT_MAX_LEN_IDX>(WidgetData.Category);
+  const bool bExportTypeSelected = ExportTypeListView.IsValid() && ExportTypeListView->GetNumItemsSelected() == 1;
+  const bool bCategoriesSelected = CategoryListView.IsValid() && CategoryListView->GetNumItemsSelected() <= 1;
+
+  bool bSuccess = true;
+  TArray<FString> ErrorMessage;
+  ErrorMessage.Add(TEXT("Some validation errors occured, please review them and re-generate:\r\n\r\n"));
+
+  if (PromptTextBox->GetText().ToString().Len() == 0)
+  {
+    bSuccess = false;
+    ErrorMessage.Add(TEXT("Prompt can't be empty"));
+  }
+
+  if (PromptTextBox->GetText().ToString().Len() > PromptMaxLen)
+  {
+    bSuccess = false;
+    ErrorMessage.Add(FString::Printf(TEXT("Prompt text is too long, max length is %d"), PromptMaxLen));
+  }
+
+  if (
+    NegativeTextTextBox->GetText().ToString().Len() > 0 &&
+    NegativeTextTextBox->GetText().ToString().Len() > NegativeTextMaxLen
+  )
+  {
+    bSuccess = false;
+    ErrorMessage.Add(FString::Printf(TEXT("Negative text is too long, max length is %d"), NegativeTextMaxLen));
+  }
+
+  if (!bExportTypeSelected)
+  {
+    bSuccess = false;
+    ErrorMessage.Add(TEXT("An export type must be selected"));
+  }
+
+  if (!bCategoriesSelected)
+  {
+    bSuccess = false;
+    ErrorMessage.Add(TEXT("You can only select up to one style"));
+  }
+
+  if (!bSuccess)
+  {
+    FMessageDialog::Open(
+      EAppMsgCategory::Error,
+      EAppMsgType::Ok,
+      FText::FromString(FString::Join(ErrorMessage, TEXT("\r\n"))),
+      FText::FromString(TEXT("Failed validating generate data"))
+      );
+  }
+
+  return bSuccess;
 }
 
 FReply SSkyboxAiWidget::OnRefreshLists()
