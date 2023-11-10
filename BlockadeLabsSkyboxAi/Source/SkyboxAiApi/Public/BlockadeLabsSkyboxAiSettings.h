@@ -4,7 +4,7 @@
 #include "UObject/ObjectMacros.h"
 #include "BlockadeLabsSkyboxAiSettings.generated.h"
 
-UCLASS(config = "BlackdaleLabs", meta = (DisplayName = "Blockade Labs Skybox AI"))
+UCLASS(config = "BlockdaLabs", meta = (DisplayName = "Blockade Labs Skybox AI"))
 class SKYBOXAIAPI_API UBlockadeLabsSkyboxAiSettings : public UDeveloperSettings
 {
   GENERATED_BODY()
@@ -17,7 +17,7 @@ public:
   bool bEnablePremiumContent = true;
 
   UPROPERTY(config, EditAnywhere, Category = "API Settings")
-  FString ApiKey;
+  FString ApiKey = TEXT("");
 
   UPROPERTY(config, EditAnywhere, Category = "API Settings", AdvancedDisplay)
   FString ApiEndpoint = TEXT("https://backend.blockadelabs.com/api/v1");
@@ -27,7 +27,13 @@ public:
     EditAnywhere,
     Category = "API Settings",
     AdvancedDisplay,
-    meta = ( UIMin = "0.1", UIMax = "60.0", ClampMin = "0.1", ClampMax = "60.0")
+    meta = (
+      UIMin = "0.25",
+      UIMax = "60.0",
+      ClampMin = "0.25",
+      ClampMax = "60.0",
+      DisplayName = "API Polling Interval In Seconds"
+    )
   )
-  float ApiPollingInterval = 5.0f;
+  float ApiPollingInterval = 1.0f;
 };

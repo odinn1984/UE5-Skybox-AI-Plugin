@@ -28,7 +28,7 @@ This plugin was tested on the following versions:
 
 ## Important Notes
 
-When using this plugin it introduces new editor level settings where you put your API key, UE will create a file for this config under `[PROJECT ROOT]/Config/DefaultBlackdaleLabs.ini`
+When using this plugin it introduces new editor level settings where you put your API key, UE will create a file for this config under `[PROJECT ROOT]/Config/DefaultBlockadeLabs.ini`
 
 Since this file contains **SENSITIVE INFORMATION** please make sure to **NEVER** submit it anywhere (like GitHub, etc...)
 
@@ -40,14 +40,14 @@ To setup the plugin please follow the following steps:
 
 1. Either clone this repository or download the zipped source code
 2. Copy the `BlockadeLabsSkyboxAi` directory into one of the following paths
-    - To the `Plugins` folder of your UE5 project
-    - To the `Plugins` folder of your engine version (e.g: `D:\Unreal Engines\UE_5.3\Engine\Plugins`)
+   1. To the `Plugins` folder of your UE5 project
+   2. To the `Plugins` folder of your engine version (e.g: `D:\Unreal Engines\UE_5.3\Engine\Plugins`)
 3. Open your project and go to `Edit` -> `Plugins`
 4. Search for`BlockadeLabs SkyboxAI` which will be under the `AI` category either under `BUILT-IN` or `PROJECT` depending on where you put the folder of the plugin
 5. Enable the plugin and restart the engine
 6. After the restart the plugin will be under the `Tools` menu and will be called `Blockade Labs SkyboxAI`
 7. Please go to `Edit` -> `Editor Settings` and put in the API Key that you have generated.
-    - To generate and API key you will need a SkyboxAI account and then go to [API Settings](https://skybox.blockadelabs.com/profile/api) and press on the `Generate API Key` button or use a currently available API key
+   1. To generate and API key you will need a SkyboxAI account and then go to [API Settings](https://skybox.blockadelabs.com/profile/api) and press on the `Generate API Key` button or use a currently available API key
 
 ### Plugin Settings
 
@@ -62,7 +62,7 @@ To setup the plugin please follow the following steps:
 To setup a development environment please follow these steps:
 
 1. Create a new project using one of the supported engine versions
-    - If you want to introduce support for an engine versions that is not listed, contribution to this repository is very appreciated!
+   1. If you want to introduce support for an engine versions that is not listed, contribution to this repository is very appreciated!
 2. Continue with following the steps [above](#setting-up-the-plugin) and in step number 2 put the plugin in your project's `Plugins` directory
 
 ## Coding Standards
@@ -74,7 +74,9 @@ Please make sure to follow the following rules when writing code for this reposi
 3. If you are adding functionality or modifying something please make sure to either add new tests or make sure that the current ones cover the changed functionality
 4. Try to not go overboard with testing every single line of code, code coverage is less important than functionality and user flow coverage
 5. Please make sure that the change is running on all supported engine versions
-    - Hopefully I will add automation around that so that we can have a testing matrix, but until then we have to make sure we don't break any engine version
+   1. Hopefully I will add automation around that so that we can have a testing matrix, but until then we have to make sure we don't break any engine version
+6. Oh yeah... and please refrain from putting comments in code, comments are a mess... If something is unclear let's refactor it so that reading the code makes sense and we can understand what it does without needing to put comments
+   1. Like everything, this also has exception so please don't follow this rule religiously, if you feel like you need to put a comment, put it, but please try to avoid it as much as possible
 
 ## Links And Resources
 
