@@ -2,7 +2,6 @@
 #include "BlockadeLabsSkyboxAiSettings.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "SkyboxAiApi.h"
-#include "SkyboxProvider.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
 #include "Widgets/Input/SSearchBox.h"
 
@@ -18,7 +17,11 @@ void SSkyboxAiWidget::Construct(const FArguments &InArgs)
     PluginSettings->OnSettingChanged().AddLambda(
       [this](UObject *Object, struct FPropertyChangedEvent &Event)
       {
-        if (Event.GetPropertyName() != GET_MEMBER_NAME_CHECKED(UBlockadeLabsSkyboxAiSettings, bEnablePremiumContent)) return;
+        if (Event.GetPropertyName() != GET_MEMBER_NAME_CHECKED(
+          UBlockadeLabsSkyboxAiSettings,
+          bEnablePremiumContent
+          ))
+          return;
         if (!EnhancePromptCheckbox.IsValid() || !PluginSettings.IsValid()) return;
 
         if (!PluginSettings->bEnablePremiumContent) EnhancePromptCheckbox->SetIsChecked(ECheckBoxState::Unchecked);
@@ -51,86 +54,36 @@ void SSkyboxAiWidget::Construct(const FArguments &InArgs)
   OnRefreshLists();
 }
 
-void SSkyboxAiWidget::LoadCategoriesFromList(const TMap<int, FString> &List)
+void SSkyboxAiWidget::LoadCategoriesFromList(const FSkyboxAiStyles &List)
 {
-  LoadViewListFromMap(Categories, FilteredCategories, CategoryListView, List, WidgetData.Category, TEXT("Categories"));
+  LoadViewListFromMap<FSkyboxListEntry, FSkyboxAiStylesTuple>(
+    Categories,
+    FilteredCategories,
+    CategoryListView,
+    List,
+    WidgetData.Category,
+    TEXT("Categories"),
+    [this](const FSkyboxListEntry &Item)
+    {
+      return FText::FromString(Item.Name);
+    }
+    );
 }
 
-void SSkyboxAiWidget::LoadExportTypesFromList(const TMap<int, FString> &List)
+void SSkyboxAiWidget::LoadExportTypesFromList(const FSkyboxAiExportTypes &List)
 {
-  LoadViewListFromMap(
+  LoadViewListFromMap<FString, FSkyboxAiExportTypesTuple>(
     ExportTypes,
     FilteredExportTypes,
     ExportTypeListView,
     List,
     WidgetData.ExportType,
-    TEXT("Export Types")
-    );
-}
-
-void SSkyboxAiWidget::LoadViewListFromMap(
-  TMap<int, FString> &OutValues,
-  TArray<TSharedPtr<FText>> &OutFilteredValues,
-  const FSkyboxAiWidgetListView &OutListView,
-  const TMap<int, FString> &InList,
-  FSkyboxAiWidgetTuple &CurrentValue,
-  const FString &InListSource)
-{
-  for (auto &Item : InList)
-  {
-    OutValues.Add(Item.Key, Item.Value);
-    OutFilteredValues.Add(MakeShared<FText>(FText::FromString(Item.Value)));
-  }
-
-  if (!OutListView.IsValid())
-  {
-    return ShowMessage(
-      RefreshListsNotification,
-      RefreshListsNotificationTitle,
-      FText::FromString(FString::Printf(TEXT("[%s] Invalid List View Provided"), *InListSource)),
-      SNotificationItem::CS_Fail
-      );
-  }
-
-  UpdateListViewSelection(OutListView, OutValues, OutFilteredValues, CurrentValue);
-}
-
-void SSkyboxAiWidget::UpdateListViewSelection(
-  const FSkyboxAiWidgetListView &ListView,
-  TMap<int, FString> &Map,
-  TArray<TSharedPtr<FText>> &List,
-  FSkyboxAiWidgetTuple &CurrentValue) const
-{
-  const FString Value = std::get<TUPLE_VALUE_IDX>(CurrentValue);
-  const TFunction<bool(const TSharedPtr<FText> &, const FString &)> Equals = [](
-    const TSharedPtr<FText> &Item,
-    const FString &Value)
-  {
-    return Item->EqualTo(FText::FromString(Value));
-  };
-
-  if (Value.IsEmpty() || (List.Num() > 0 && ListContains<TSharedPtr<FText>, FString>(
-    List,
-    Value,
-    Equals
-    )))
-  {
-    if (const int ItemIndex = FindInList<TSharedPtr<FText>, FString>(List, Value, Equals); ItemIndex != INDEX_NONE)
+    TEXT("Export Types"),
+    [this](const FString &Item)
     {
-      ListView->SetSelection(List[ItemIndex]);
+      return FText::FromString(Item);
     }
-  }
-  else if (List.Num() > 0)
-  {
-    const int *DefaultValueId = Map.FindKey(List[0]->ToString());
-    int DefaultId = DefaultValueId == nullptr ? -1 : *DefaultValueId;
-
-    CurrentValue = std::make_tuple(DefaultId, List[0]->ToString());
-    ListView->SetSelection(List[0]);
-    NotifyWidgetDataUpdated();
-  }
-
-  if (ListView.IsValid()) ListView->RequestListRefresh();
+    );
 }
 
 void SSkyboxAiWidget::AddPrompt(TSharedPtr<SVerticalBox> RootWidget)
@@ -143,8 +96,18 @@ void SSkyboxAiWidget::AddPrompt(TSharedPtr<SVerticalBox> RootWidget)
       .Padding(10.0f)
       .AutoWidth()
   [
-    SNew(STextBlock).MinDesiredWidth(125)
-                    .Text(FText::FromString(TEXT("Prompt")))
+    SAssignNew(
+      PromptLabel,
+      STextBlock
+      ).MinDesiredWidth(125)
+       .Text(
+         FText::FromString(
+           FString::Printf(
+             TEXT("Prompt\r\n[0 / %d]"),
+             std::get<TUPLE_PROMPT_MAX_LEN_IDX>(WidgetData.Category)
+             )
+           )
+         )
   ];
 
   HBox->AddSlot()
@@ -153,13 +116,21 @@ void SSkyboxAiWidget::AddPrompt(TSharedPtr<SVerticalBox> RootWidget)
       .Padding(10.0f)
       .FillWidth(1.0)
   [
-    SNew(SMultiLineEditableTextBox).AllowContextMenu(true)
-                                   .Padding(10.0f)
-                                   .HintText(FText::FromString(TEXT("Enter your prompt here...\nThis is mandatory!")))
-                                   .OnTextChanged(this, &SSkyboxAiWidget::OnPromptTextChanged)
-                                   .OnTextCommitted(this, &SSkyboxAiWidget::OnPromTextCommitted)
-                                   .AutoWrapText(true)
-                                   .Text(WidgetData.Prompt)
+    SAssignNew(
+      PromptTextBox,
+      SMultiLineEditableTextBox
+      ).AllowContextMenu(true)
+       .Padding(10.0f)
+       .HintText(
+         FText::FromString(
+           TEXT("Enter your prompt here...\nThis is mandatory!")
+           )
+         )
+       .OnTextChanged(this, &SSkyboxAiWidget::OnPromptTextChanged)
+       .OnTextCommitted(this, &SSkyboxAiWidget::OnPromTextCommitted)
+       .AutoWrapText(true)
+       .WrappingPolicy(ETextWrappingPolicy::AllowPerCharacterWrapping)
+       .Text(WidgetData.Prompt)
   ];
 
   AddExportTypeSelector(HBox);
@@ -174,8 +145,11 @@ void SSkyboxAiWidget::AddPrompt(TSharedPtr<SVerticalBox> RootWidget)
 
 void SSkyboxAiWidget::OnPromptTextChanged(const FText &NewText)
 {
-  WidgetData.Prompt = NewText;
+  const int MaxTextLen = std::get<TUPLE_PROMPT_MAX_LEN_IDX>(WidgetData.Category);
+  WidgetData.Prompt = FText::FromString(NewText.ToString().Mid(0, MaxTextLen));
+
   NotifyWidgetDataUpdated();
+  UpdateTextCharacterCount(TEXT("Prompt"), PromptLabel, PromptTextBox, TUPLE_PROMPT_MAX_LEN_IDX);
 }
 
 void SSkyboxAiWidget::OnPromTextCommitted(const FText &NewText, ETextCommit::Type CommitType)
@@ -236,7 +210,16 @@ void SSkyboxAiWidget::OnExportTypeSearchTextChanged(const FText &NewText)
     }
   }
 
-  UpdateListViewSelection(ExportTypeListView, ExportTypes, FilteredExportTypes, WidgetData.ExportType);
+  UpdateListViewSelection<FString, FSkyboxAiExportTypesTuple>(
+    ExportTypeListView,
+    ExportTypes,
+    FilteredExportTypes,
+    WidgetData.ExportType,
+    [this](const FString &Item)
+    {
+      return FText::FromString(Item);
+    }
+    );
 }
 
 TSharedRef<ITableRow> SSkyboxAiWidget::OnExportTypeGenerateRow(
@@ -255,10 +238,11 @@ void SSkyboxAiWidget::OnExportTypeSelected(TSharedPtr<FText> InItem, ESelectInfo
 
   FString NewValue = InItem.IsValid() ? InItem->ToString() : TEXT("");
   const int *ValueId = ExportTypes.FindKey(NewValue);
-  int FinalId = ValueId == nullptr ? -1 : *ValueId;
+  const int FinalId = ValueId == nullptr ? -1 : *ValueId;
+
+  if (FinalId == -1) return;
 
   WidgetData.ExportType = std::make_tuple(FinalId, NewValue);
-
   NotifyWidgetDataUpdated();
 }
 
@@ -276,8 +260,18 @@ void SSkyboxAiWidget::AddNegativeTextAndCategories(TSharedPtr<SVerticalBox> Root
       .Padding(10.0f)
       .AutoWidth()
   [
-    SNew(STextBlock).MinDesiredWidth(125)
-                    .Text(FText::FromString(TEXT("Negative Text")))
+    SAssignNew(
+      NegativeTextLabel,
+      STextBlock
+      ).MinDesiredWidth(125)
+       .Text(
+         FText::FromString(
+           FString::Printf(
+             TEXT("Negative Text\r\n[0 / %d]"),
+             std::get<TUPLE_NEGATIVE_TEXT_MAX_LEN_IDX>(WidgetData.Category)
+             )
+           )
+         )
   ];
 
   HBox->AddSlot()
@@ -288,13 +282,17 @@ void SSkyboxAiWidget::AddNegativeTextAndCategories(TSharedPtr<SVerticalBox> Root
   [
     SNew(SBox)
     [
-      SNew(SMultiLineEditableTextBox).AllowContextMenu(true)
-                                     .Padding(10.0f)
-                                     .HintText(HintText)
-                                     .OnTextChanged(this, &SSkyboxAiWidget::OnNegativeTextChanged)
-                                     .OnTextCommitted(this, &SSkyboxAiWidget::OnNegativeTextCommitted)
-                                     .AutoWrapText(true)
-                                     .Text(WidgetData.NegativeText)
+      SAssignNew(
+        NegativeTextTextBox,
+        SMultiLineEditableTextBox
+        ).AllowContextMenu(true)
+         .Padding(10.0f)
+         .HintText(HintText)
+         .OnTextChanged(this, &SSkyboxAiWidget::OnNegativeTextChanged)
+         .OnTextCommitted(this, &SSkyboxAiWidget::OnNegativeTextCommitted)
+         .AutoWrapText(true)
+         .WrappingPolicy(ETextWrappingPolicy::AllowPerCharacterWrapping)
+         .Text(WidgetData.NegativeText)
     ]
   ];
 
@@ -310,8 +308,16 @@ void SSkyboxAiWidget::AddNegativeTextAndCategories(TSharedPtr<SVerticalBox> Root
 
 void SSkyboxAiWidget::OnNegativeTextChanged(const FText &NewText)
 {
-  WidgetData.NegativeText = NewText;
+  const int MaxTextLen = std::get<TUPLE_NEGATIVE_TEXT_MAX_LEN_IDX>(WidgetData.Category);;
+  WidgetData.NegativeText = FText::FromString(NewText.ToString().Mid(0, MaxTextLen));
+
   NotifyWidgetDataUpdated();
+  UpdateTextCharacterCount(
+    TEXT("Negative Text"),
+    NegativeTextLabel,
+    NegativeTextTextBox,
+    TUPLE_NEGATIVE_TEXT_MAX_LEN_IDX
+    );
 }
 
 void SSkyboxAiWidget::OnNegativeTextCommitted(const FText &NewText, ETextCommit::Type CommitType)
@@ -366,13 +372,22 @@ void SSkyboxAiWidget::OnCategorySearchTextChanged(const FText &NewText)
 
   for (auto &[Key, Value] : Categories)
   {
-    if (Value.Contains(SearchString.ToString()))
+    if (Value.Name.Contains(SearchString.ToString()))
     {
-      FilteredCategories.Add(MakeShared<FText>(FText::FromString(Value)));
+      FilteredCategories.Add(MakeShared<FText>(FText::FromString(Value.Name)));
     }
   }
 
-  UpdateListViewSelection(CategoryListView, Categories, FilteredCategories, WidgetData.Category);
+  UpdateListViewSelection<FSkyboxListEntry, FSkyboxAiStylesTuple>(
+    CategoryListView,
+    Categories,
+    FilteredCategories,
+    WidgetData.Category,
+    [this](const FSkyboxListEntry &Item)
+    {
+      return FText::FromString(Item.Name);
+    }
+    );
 }
 
 TSharedRef<ITableRow> SSkyboxAiWidget::OnCategoryGenerateRow(
@@ -389,11 +404,22 @@ void SSkyboxAiWidget::OnCategorySelected(TSharedPtr<FText> InItem, ESelectInfo::
 {
   if (SelectInfo == ESelectInfo::Direct) return;
 
-  FString NewValue = InItem.IsValid() ? InItem->ToString() : TEXT("");
-  const int *ValueId = Categories.FindKey(NewValue);
-  int FinalId = ValueId == nullptr ? -1 : *ValueId;
+  const FString NewValue = InItem.IsValid() ? InItem->ToString() : TEXT("");
+  const int *ValueId = Categories.FindKey(FSkyboxListEntry(NewValue));
+  const int FinalId = ValueId == nullptr ? -1 : *ValueId;
 
-  WidgetData.Category = std::make_tuple(FinalId, NewValue);
+  if (FinalId == -1) return;
+
+  const auto [Name, PromptMaxLen, NegativeTextMaxLen] = Categories[FinalId];
+  WidgetData.Category = std::make_tuple(FinalId, NewValue, PromptMaxLen, NegativeTextMaxLen);
+
+  UpdateTextCharacterCount(TEXT("Prompt"), PromptLabel, PromptTextBox, TUPLE_PROMPT_MAX_LEN_IDX);
+  UpdateTextCharacterCount(
+    TEXT("Negative Text"),
+    NegativeTextLabel,
+    NegativeTextTextBox,
+    TUPLE_NEGATIVE_TEXT_MAX_LEN_IDX
+    );
 
   NotifyWidgetDataUpdated();
 }
@@ -431,10 +457,19 @@ void SSkyboxAiWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
                             .AutoWidth()
                             .Padding(0.0f, 10.0f)
     [
-      SAssignNew(EnhancePromptCheckbox, SCheckBox).ToolTipText(FText::FromString(TEXT("Enable enriching prompt with AI")))
-                     .OnCheckStateChanged(this, &SSkyboxAiWidget::OnEnrichPromptChanged)
-                     .IsChecked(WidgetData.bEnrichPrompt ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                     .IsEnabled(PluginSettings->bEnablePremiumContent)
+      SAssignNew(
+        EnhancePromptCheckbox,
+        SCheckBox
+        ).ToolTipText(
+           FText::FromString(TEXT("Enable enriching prompt with AI"))
+           )
+         .OnCheckStateChanged(this, &SSkyboxAiWidget::OnEnrichPromptChanged)
+         .IsChecked(
+           WidgetData.bEnrichPrompt ?
+           ECheckBoxState::Checked :
+           ECheckBoxState::Unchecked
+           )
+         .IsEnabled(PluginSettings->bEnablePremiumContent)
     ]
 
     + SHorizontalBox::Slot().HAlign(HAlign_Center)
@@ -464,6 +499,7 @@ FReply SSkyboxAiWidget::OnGenerateClicked()
     SNotificationItem::CS_Pending
     );
 
+  // TODO: Delete this dirt of comments and implement real functionality
   // Start generate API call
   // When API call is done, start polling for generate status
   // when status is success start download of the image
@@ -545,6 +581,24 @@ void SSkyboxAiWidget::ExecuteRefreshListAsync()
           );
 
         if (RefreshListsButton.IsValid()) RefreshListsButton->SetEnabled(true);
+        if (PromptLabel.IsValid())
+        {
+          UpdateTextCharacterCount(
+            TEXT("Prompt"),
+            PromptLabel,
+            PromptTextBox,
+            TUPLE_PROMPT_MAX_LEN_IDX
+            );
+        }
+        if (NegativeTextLabel.IsValid())
+        {
+          UpdateTextCharacterCount(
+            TEXT("Negative Text"),
+            NegativeTextLabel,
+            NegativeTextTextBox,
+            TUPLE_NEGATIVE_TEXT_MAX_LEN_IDX
+            );
+        }
       }
       );
   };
@@ -568,6 +622,34 @@ void SSkyboxAiWidget::ExecuteRefreshListAsync()
       OnApiCallComplete(false);
     }
     );
+}
+
+void SSkyboxAiWidget::UpdateTextCharacterCount(
+  const FString &LabelTitle,
+  const TSharedPtr<STextBlock> &InPromptLabel,
+  const TSharedPtr<SMultiLineEditableTextBox> &InPromptTextBox,
+  const int TupleLenIdx) const
+{
+  const int MaxTextLen = TupleLenIdx == TUPLE_PROMPT_MAX_LEN_IDX ?
+    std::get<TUPLE_PROMPT_MAX_LEN_IDX>(WidgetData.Category) :
+    std::get<TUPLE_NEGATIVE_TEXT_MAX_LEN_IDX>(WidgetData.Category);
+
+  InPromptLabel->SetText(
+    FText::FromString(
+      FString::Printf(
+        TEXT("%s\r\n[%d / %d]"),
+        *LabelTitle,
+        InPromptTextBox->GetText().ToString().Len(),
+        MaxTextLen
+        )
+      )
+    );
+
+  const FSlateColor Color = InPromptTextBox->GetText().ToString().Len() > MaxTextLen ?
+    FSlateColor(FLinearColor(1.0f, 0.0f, 0.0f)) :
+    FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f));
+
+  NegativeTextTextBox->SetForegroundColor(Color);
 }
 
 void SSkyboxAiWidget::ShowMessage(

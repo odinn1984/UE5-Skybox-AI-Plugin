@@ -17,7 +17,7 @@ struct FSkyboxApiError
   GENERATED_BODY()
 
   UPROPERTY()
-  FString error;
+  FString error = TEXT("");
 };
 
 UCLASS()
@@ -30,6 +30,8 @@ public:
 
   FORCEINLINE USkyboxProvider *Skybox() const { return SkyboxProvider; }
   FORCEINLINE UImagineProvider *Imagine() const { return ImagineProvider; }
+
+  FORCEINLINE void SetClient(USKyboxAiHttpClient *InAPIClient) { ApiClient = InAPIClient; }
 
   void SaveExportedImage(const FString &Id) const;
 

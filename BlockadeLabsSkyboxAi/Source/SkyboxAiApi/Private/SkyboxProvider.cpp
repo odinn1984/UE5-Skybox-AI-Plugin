@@ -62,13 +62,19 @@ void USkyboxProvider::GetStyles(FGetStylesCallback Callback) const
     TEXT(""),
     [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
     {
-      TMap<int, FString> Styles = TMap<int, FString>();
+      FSkyboxAiStyles Styles;
+      const FString SanitizedBody = Body.Replace(TEXT("\"max-char\""), TEXT("\"max_char\""))
+                                        .Replace(
+                                          TEXT("\"negative-text-max-char\""),
+                                          TEXT("\"negative_text_max_char\"")
+                                          );
 
-      for (TArray<FSkyboxStyle> Response = USKyboxAiHttpClient::DeserializeJsonToUStructArray<FSkyboxStyle>(Body);
-           FSkyboxStyle &Item : Response)
+      for (TArray<FSkyboxStyle> Response = USKyboxAiHttpClient::DeserializeJsonToUStructArray<FSkyboxStyle>(
+             SanitizedBody
+             ); FSkyboxStyle &Item : Response)
       {
         if (!ShouldShowPremiumContent() && Item.premium == 1) continue;
-        Styles.Add(Item.id, Item.name);
+        Styles.Add(Item.id, FSkyboxListEntry(Item.name, Item.max_char, Item.negative_text_max_char));
       }
 
       Callback(Styles, StatusCode, bConnectedSuccessfully);
@@ -86,7 +92,7 @@ void USkyboxProvider::GetExports(FGetExportsCallback Callback) const
     TEXT(""),
     [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
     {
-      TMap<int, FString> Types = TMap<int, FString>();
+      FSkyboxAiExportTypes Types;
 
       for (TArray<FSkyboxExportType> Response = USKyboxAiHttpClient::DeserializeJsonToUStructArray<FSkyboxExportType>(
              Body
@@ -157,7 +163,9 @@ bool USkyboxProvider::IsClientValid() const
 {
   if (ApiClient == nullptr)
   {
-    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(FText::FromString(TEXT("Client wasn't initialized")));
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
+      FText::FromString(TEXT("Client wasn't initialized"))
+      );
     return false;
   }
 

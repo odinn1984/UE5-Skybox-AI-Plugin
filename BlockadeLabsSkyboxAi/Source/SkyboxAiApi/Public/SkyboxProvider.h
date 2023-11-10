@@ -8,8 +8,25 @@ class USKyboxAiHttpClient;
 struct FSkyboxGenerateResponse;
 struct FSkyboxExportResponse;
 
-typedef const TMap<int, FString> FSkyboxAiStyles;
-typedef const TMap<int, FString> FSkyboxAiExportTypes;
+struct FSkyboxListEntry
+{
+  FString Name;
+  int PromptMaxLen;
+  int NegativeTextMaxLen;
+
+  bool operator== (const FSkyboxListEntry &Other) const
+  {
+    return Name.Equals(Other.Name);
+  }
+
+  bool operator== (const FString &OtherName) const
+  {
+    return Name.Equals(OtherName);
+  }
+};
+
+typedef TMap<int, FSkyboxListEntry> FSkyboxAiStyles;
+typedef TMap<int, FString> FSkyboxAiExportTypes;
 
 typedef TFunction<void(FSkyboxGenerateResponse *, int StatusCode, bool bConnectedSuccessfully)> FPostCallback;
 typedef TFunction<void(FSkyboxAiStyles &, int StatusCode, bool bConnectedSuccessfully)> FGetStylesCallback;
@@ -23,7 +40,7 @@ struct FSkyboxExportRequest
   GENERATED_BODY()
 
   UPROPERTY()
-  int id;
+  int id = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -32,13 +49,19 @@ struct FSkyboxStyle
   GENERATED_BODY()
 
   UPROPERTY()
-  int id;
+  int id = 0;
 
   UPROPERTY()
-  FString name;
+  FString name = TEXT("");
 
   UPROPERTY()
-  int premium;
+  int premium = 0;
+
+  UPROPERTY()
+  int max_char = 0;
+
+  UPROPERTY()
+  int negative_text_max_char = 0;
 };
 
 USTRUCT()
@@ -47,13 +70,13 @@ struct FSkyboxExportType
   GENERATED_BODY()
 
   UPROPERTY()
-  int id;
+  int id = 0;
 
   UPROPERTY()
-  FString name;
+  FString name = TEXT("");
 
   UPROPERTY()
-  bool premium_feature;
+  bool premium_feature = false;
 };
 
 USTRUCT()
@@ -62,16 +85,16 @@ struct FSkyboxExportResponse
   GENERATED_BODY()
 
   UPROPERTY()
-  FString file_url;
+  FString file_url = TEXT("");
 
   UPROPERTY()
-  FString id;
+  FString id = TEXT("");
 
   UPROPERTY()
-  FString status;
+  FString status = TEXT("");
 
   UPROPERTY()
-  FString error_message;
+  FString error_message = TEXT("");
 };
 
 USTRUCT()
@@ -80,10 +103,10 @@ struct FSkyboxGenerateResponse
   GENERATED_BODY()
 
   UPROPERTY()
-  FString obfuscated_id;
+  FString obfuscated_id = TEXT("");
 
   UPROPERTY()
-  FString status;
+  FString status = TEXT("");
 };
 
 USTRUCT()
@@ -92,16 +115,16 @@ struct FSkyboxGenerateRequest
   GENERATED_BODY()
 
   UPROPERTY()
-  FString prompt;
+  FString prompt = TEXT("");
 
   UPROPERTY()
-  FString negative_text;
+  FString negative_text = TEXT("");
 
   UPROPERTY()
-  bool enhance_prompt;
+  bool enhance_prompt = false;
 
   UPROPERTY()
-  int skybox_style_id;
+  int skybox_style_id = 0;
 };
 
 UCLASS()

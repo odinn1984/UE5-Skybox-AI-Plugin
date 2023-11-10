@@ -9,26 +9,25 @@ struct FImagineGetExportsResponse;
 
 typedef TFunction<void(FImagineGetExportsResponse *, int StatusCode, bool bConnectedSuccessfully)> FGetRequestsCallback;
 
-
 USTRUCT()
 struct FImagineGetExportsResponseRequest
 {
   GENERATED_BODY()
 
   UPROPERTY()
-  FString obfuscated_id;
+  FString obfuscated_id = TEXT("");
 
   UPROPERTY()
-  FString status;
+  FString status = TEXT("");
 
   UPROPERTY()
-  FString error_message;
+  FString error_message = TEXT("");
 
   UPROPERTY()
-  FString file_url;
+  FString file_url = TEXT("");
 
   UPROPERTY()
-  FString title;
+  FString title = TEXT("");
 };
 
 USTRUCT()
@@ -37,7 +36,7 @@ struct FImagineGetExportsResponse
   GENERATED_BODY()
 
   UPROPERTY()
-  FImagineGetExportsResponseRequest request;
+  FImagineGetExportsResponseRequest request = FImagineGetExportsResponseRequest();
 };
 
 UCLASS()
