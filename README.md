@@ -16,8 +16,10 @@ If you are interested in knowing more about Blockade Labs and Skybox AI please t
   - [Important Notes](#important-notes)
   - [Setting Up The Plugin](#setting-up-the-plugin)
     - [Plugin Settings](#plugin-settings)
+  - [Using The Plugin](#using-the-plugin)
   - [Setting Up Dev Environment](#setting-up-dev-environment)
   - [Coding Standards](#coding-standards)
+  - [Limitations](#limitations)
   - [Links And Resources](#links-and-resources)
 
 ## Requirements
@@ -25,6 +27,10 @@ If you are interested in knowing more about Blockade Labs and Skybox AI please t
 This plugin was tested on the following versions:
 
 - 5.3
+
+This plugin was tested on the following platforms:
+
+- Windows 11
 
 ## Important Notes
 
@@ -55,7 +61,27 @@ To setup the plugin please follow the following steps:
 - `API Endpoint` - You can customize the endpoint of the API in case you are using a different one [Default: https://backend.blockadelabs.com/api/v1]
 - `API Polling Interval In Seconds` - This allows you to change the frequency of the polling of the API in case of rate limiting issues [Default: 1.0]
 - `Enable Premium Content` - This tells the plugin if we want to send and get information that is marked as premium (e.g: Enhanced Prompt) [Default: true]
-- `Save Directory` - This is where the plugin will save the skybox that it downloads from the API, if the directory doesn't exist it will be created [Defauklt: /Game/Content/SkyboxAI/Exports]
+- `Save Directory` - This is where the plugin will save the skybox that it downloads from the API, if the directory doesn't exist it will be created [Defauklt: SkyboxAI/Exports]
+  - This is a relative path to the project's `Content` directory
+  - Notice that it doesn't start with `/` or `\` and it doesn't end with `/` or `\`
+
+## Using The Plugin
+
+After setting up the plugin you can use it by following these steps:
+
+1. Go to `Tools` -> `Blockade Labs SkyboxAI`
+2. Enter the description of the skybox that you want to generate in `Prompt` field
+3. Optionally fill in the `Negative Text` field if you want to add some negative text for the generator to use
+4. You must select the export format (e.g: `HDR` or `EXR`) in the top list on the right
+5. Optionally you can select the style of the skybox in the bottom list on the right
+   1. By default the first style is selected from the list on first load
+   2. You can click on any selected style to de-select it if you do not want to send in style information
+6. Optionally you can also enable the `Enhanced Prompt` checkbox if you want to use the enhance prompt feature
+7. The `Refresh List` button will refresh the list of styles and export types
+8. Press on `Generate Skybox` and wait, please do not close the plugin tab while it's generating the skybox. The plugin will notify you on progress and when it's done
+9.  At the end, it will download the image and put it in the directory that you have specified in the plugin settings and UE will give you a prompt asking if you want to re-import the asset since the directory it monitors has changed. Please re-import the assets and follow the instructions for that process that UE provides
+
+For more information what `Prompt`, `Negative Text` and `Enhanced Prompt` mean please go to the [SkyboxAI API docs](https://api-documentation.blockadelabs.com/api/skybox.html#generate-skybox)
 
 ## Setting Up Dev Environment
 
@@ -77,6 +103,21 @@ Please make sure to follow the following rules when writing code for this reposi
    1. Hopefully I will add automation around that so that we can have a testing matrix, but until then we have to make sure we don't break any engine version
 6. Oh yeah... and please refrain from putting comments in code, comments are a mess... If something is unclear let's refactor it so that reading the code makes sense and we can understand what it does without needing to put comments
    1. Like everything, this also has exception so please don't follow this rule religiously, if you feel like you need to put a comment, put it, but please try to avoid it as much as possible
+
+## Limitations
+
+This plugin is currently missing a few features that are available on SkyboxAI, please see the full list of features and what is available and what is missing
+
+- [x] Generate a Skybox and export to a file
+- [ ] Remix a Skybox
+- [ ] Download depth map
+- [ ] 3D features
+- [ ] Control image
+- [ ] No support for Pusher / Webhooks
+
+If any of the missing features will be required I am happy to implement them or get contributions for them
+
+Any information about generated Skyboxes and history of usage can be found in the [SkyboxAI's Dashboard](https://skybox.blockadelabs.com/profile/history)
 
 ## Links And Resources
 

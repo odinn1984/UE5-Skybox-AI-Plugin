@@ -1,5 +1,6 @@
 ﻿#include "SSkyboxAiWidget.h"
 #include "BlockadeLabsSkyboxAiSettings.h"
+#include "ImagineProvider.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "SkyboxAiApi.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
@@ -492,42 +493,59 @@ FReply SSkyboxAiWidget::OnGenerateClicked()
 {
   if (!ValidateGenerateData()) return FReply::Handled();
 
-  // if (GenerateButton.IsValid()) GenerateButton->SetEnabled(false);
+  if (GenerateButton.IsValid()) GenerateButton->SetEnabled(false);
 
   ShowMessage(
     GenerateSkyboxNotification,
     GenerateSkyboxNotificationTitle,
-    FText::FromString(TEXT("Generating Skybox...")),
+    FText::FromString(TEXT("Starting Skybox Generation...")),
     SNotificationItem::CS_Pending
     );
 
-  // TODO: Delete this dirt of comments and implement real functionality
-  // Start generate API call
-  // When API call is done, start polling for generate status
-  // when status is success start download of the image
-  // when done update message with success
-  // if failure happens update message with failure
-  // should probably also save the download URL on disk so that if something goes wrong the user can download it
-  // either failure or success, re-enable the generate button
+  const FString TrimmedNegativeText = WidgetData.NegativeText.ToString().TrimStartAndEnd();
+  FSkyboxGenerateRequest PostRequest;
+  PostRequest.prompt = WidgetData.Prompt.ToString().TrimStartAndEnd();
+  PostRequest.enhance_prompt = WidgetData.bEnrichPrompt;
 
-  // FSkyboxGenerateRequest PostRequest;
-  // PostRequest.prompt = WidgetData.Prompt.ToString();
-  // PostRequest.negative_text = WidgetData.NegativeText.ToString();
-  // PostRequest.enhance_prompt = WidgetData.bEnrichPrompt;
-  // PostRequest.skybox_style_id = std::get<TUPLE_KEY_IDX>(WidgetData.Category);
-  //
-  // SkyboxApi->Skybox()->Post(
-  //   PostRequest,
-  //   [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
-  //   {
-  //     if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
-  //     {
-  //       return;
-  //     }
-  //
-  //   }
-  //   );
+  if (TrimmedNegativeText.Len() > 0) PostRequest.negative_text = TrimmedNegativeText;
+  if (CategoryListView->GetNumItemsSelected() == 1)
+  {
+    PostRequest.skybox_style_id = std::get<TUPLE_KEY_IDX>(WidgetData.Category);
+  }
 
+  SkyboxApi->Skybox()->Post(
+    PostRequest,
+    [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+    {
+      if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+      {
+        if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+        ShowMessage(
+          GenerateSkyboxNotification,
+          GenerateSkyboxNotificationTitle,
+          FText::FromString(TEXT("Failed generating Skybox, See Message Log")),
+          SNotificationItem::CS_Fail
+          );
+      }
+      else
+      {
+        if (Response->status == TEXT("error"))
+        {
+          if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+          ShowMessage(
+            GenerateSkyboxNotification,
+            GenerateSkyboxNotificationTitle,
+            FText::FromString(FString::Printf(TEXT("Generation failed: %s"), *Response->error_message)),
+            SNotificationItem::CS_Fail
+            );
+        }
+        else
+        {
+          StartPollingGenerationStatus(Response->obfuscated_id);
+        }
+      }
+    }
+    );
 
   return FReply::Handled();
 }
@@ -587,6 +605,245 @@ bool SSkyboxAiWidget::ValidateGenerateData() const
   }
 
   return bSuccess;
+}
+
+void SSkyboxAiWidget::StartPollingGenerationStatus(const FString &SkyboxId)
+{
+  ShowMessage(
+    GenerateSkyboxNotification,
+    GenerateSkyboxNotificationTitle,
+    FText::FromString(TEXT("Waiting for Skybox to be generated...")),
+    SNotificationItem::CS_Pending
+    );
+
+  bGeneratePolling.Store(true);
+
+  Async(
+    EAsyncExecution::TaskGraph,
+    [this, SkyboxId]()
+    {
+      while (bGeneratePolling.Load() && !IsEngineExitRequested())
+      {
+        PollGenerationStatus(SkyboxId);
+        FPlatformProcess::Sleep(GetMutableDefault<UBlockadeLabsSkyboxAiSettings>()->ApiPollingInterval);
+      }
+    }
+    );
+}
+
+void SSkyboxAiWidget::PollGenerationStatus(const FString &SkyboxId)
+{
+  SkyboxApi->Imagine()->GetRequestsObfuscatedId(
+    SkyboxId,
+    [this, SkyboxId](FImagineGetExportsResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+    {
+      bool bStopPolling = false;
+      bool bSuccess = true;
+      FString ErrorMsg;
+
+      if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+      {
+        bStopPolling = true;
+        bSuccess = false;
+        ErrorMsg = TEXT("Failed generating Skybox, See Message Log");
+      }
+
+      const FString Status = Response == nullptr ? TEXT("") : Response->request.status;
+
+      if (bSuccess && Status == TEXT("error"))
+      {
+        bStopPolling = true;
+        bSuccess = false;
+        ErrorMsg = FString::Printf(TEXT("Generation failed: %s %s"), *SkyboxId, *Response->request.error_message);
+      }
+
+      if (bSuccess && Status == TEXT("abort"))
+      {
+        bStopPolling = true;
+        bSuccess = false;
+        ErrorMsg = FString::Printf(TEXT("Generation aborted: %s"), *SkyboxId);
+      }
+
+      if (bSuccess && Status == TEXT("complete"))
+      {
+        bStopPolling = true;
+        bSuccess = true;
+      }
+
+      if (bStopPolling)
+      {
+        bGeneratePolling.Store(false);
+
+        if (!bSuccess)
+        {
+          if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+          ShowMessage(
+            GenerateSkyboxNotification,
+            GenerateSkyboxNotificationTitle,
+            FText::FromString(ErrorMsg),
+            SNotificationItem::CS_Fail
+            );
+        }
+        else
+        {
+          ShowMessage(
+            GenerateSkyboxNotification,
+            GenerateSkyboxNotificationTitle,
+            FText::FromString(FString::Printf(TEXT("Starting export of generated Skybox: %s"), *SkyboxId)),
+            SNotificationItem::CS_Pending
+            );
+
+          FSkyboxExportRequest PostRequest;
+          PostRequest.skybox_id = SkyboxId;
+          PostRequest.type_id = std::get<TUPLE_KEY_IDX>(WidgetData.ExportType);
+
+          SkyboxApi->Skybox()->PostExport(
+            PostRequest,
+            [this, SkyboxId](FSkyboxExportResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+            {
+              if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+              {
+                if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+                return ShowMessage(
+                  GenerateSkyboxNotification,
+                  GenerateSkyboxNotificationTitle,
+                  FText::FromString(TEXT("Failed exporting Skybox, See Message Log")),
+                  SNotificationItem::CS_Fail
+                  );
+              }
+
+              if (Response->status == TEXT("error"))
+              {
+                if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+                ShowMessage(
+                  GenerateSkyboxNotification,
+                  GenerateSkyboxNotificationTitle,
+                  FText::FromString(FString::Printf(TEXT("Export failed: %s"), *Response->error_message)),
+                  SNotificationItem::CS_Fail
+                  );
+              }
+              else
+              {
+                StartPollingExportStatus(Response->id);
+              }
+            }
+            );
+        }
+      }
+      else
+      {
+        UE_LOG(SkyboxAiWidget, Log, TEXT("Generate status: %s"), *Status);
+      }
+    }
+    );
+}
+
+void SSkyboxAiWidget::StartPollingExportStatus(const FString &SkyboxId)
+{
+  ShowMessage(
+    GenerateSkyboxNotification,
+    GenerateSkyboxNotificationTitle,
+    FText::FromString(TEXT("Waiting for Skybox to be exported...")),
+    SNotificationItem::CS_Pending
+    );
+
+  bExportPolling.Store(true);
+
+  Async(
+    EAsyncExecution::TaskGraph,
+    [this, SkyboxId]()
+    {
+      while (bExportPolling.Load() && !IsEngineExitRequested())
+      {
+        PollExportStatus(SkyboxId);
+        FPlatformProcess::Sleep(GetMutableDefault<UBlockadeLabsSkyboxAiSettings>()->ApiPollingInterval);
+      }
+    }
+    );
+}
+
+void SSkyboxAiWidget::PollExportStatus(const FString &SkyboxId)
+{
+  SkyboxApi->Skybox()->GetExport(
+    SkyboxId,
+    [this, SkyboxId](FSkyboxExportResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+    {
+      bool bStopPolling = false;
+      bool bSuccess = true;
+      FString ErrorMsg;
+
+      if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+      {
+        bStopPolling = true;
+        bSuccess = false;
+        ErrorMsg = TEXT("Failed exporting Skybox, See Message Log");
+      }
+
+      const FString Status = Response == nullptr ? TEXT("") : Response->status;
+
+      if (bSuccess && Status == TEXT("error"))
+      {
+        bStopPolling = true;
+        bSuccess = false;
+        ErrorMsg = FString::Printf(TEXT("Export failed: %s %s"), *SkyboxId, *Response->error_message);
+      }
+
+      if (bSuccess && Status == TEXT("abort"))
+      {
+        bStopPolling = true;
+        bSuccess = false;
+        ErrorMsg = FString::Printf(TEXT("Export aborted: %s"), *SkyboxId);
+      }
+
+      if (bSuccess && Status == TEXT("complete"))
+      {
+        bStopPolling = true;
+        bSuccess = true;
+      }
+
+      if (bStopPolling)
+      {
+        bExportPolling.Store(false);
+
+        if (!bSuccess)
+        {
+          ShowMessage(
+            GenerateSkyboxNotification,
+            GenerateSkyboxNotificationTitle,
+            FText::FromString(ErrorMsg),
+            SNotificationItem::CS_Fail
+            );
+        }
+        else
+        {
+          ShowMessage(
+            GenerateSkyboxNotification,
+            GenerateSkyboxNotificationTitle,
+            FText::FromString(FString::Printf(TEXT("Downloading Skybox: %s"), *SkyboxId)),
+            SNotificationItem::CS_Pending
+            );
+
+          SkyboxApi->SaveExportedImage(
+            Response->file_url,
+            [this, SkyboxId](bool bSuccess)
+            {
+              if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+              ShowMessage(
+                GenerateSkyboxNotification,
+                GenerateSkyboxNotificationTitle,
+                FText::FromString(FString::Printf(TEXT("Finished downloading Skybox: %s"), *SkyboxId)),
+                bSuccess ? SNotificationItem::CS_Success : SNotificationItem::CS_Fail
+                );
+            }
+            );
+        }
+      }
+      else
+      {
+        UE_LOG(SkyboxAiWidget, Log, TEXT("Export status: %s"), *Status);
+      }
+    }
+    );
 }
 
 FReply SSkyboxAiWidget::OnRefreshLists()

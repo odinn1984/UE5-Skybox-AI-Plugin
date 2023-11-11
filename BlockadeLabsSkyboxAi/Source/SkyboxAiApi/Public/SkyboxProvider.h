@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "SKyboxAiHttpClient.h"
 #include "SkyboxProvider.generated.h"
 
 class USKyboxAiHttpClient;
@@ -14,12 +15,12 @@ struct FSkyboxListEntry
   int PromptMaxLen;
   int NegativeTextMaxLen;
 
-  bool operator== (const FSkyboxListEntry &Other) const
+  bool operator==(const FSkyboxListEntry &Other) const
   {
     return Name.Equals(Other.Name);
   }
 
-  bool operator== (const FString &OtherName) const
+  bool operator==(FString &OtherName) const
   {
     return Name.Equals(OtherName);
   }
@@ -40,7 +41,10 @@ struct FSkyboxExportRequest
   GENERATED_BODY()
 
   UPROPERTY()
-  int id = 0;
+  FString skybox_id = TEXT("");
+
+  UPROPERTY()
+  int type_id = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -107,6 +111,9 @@ struct FSkyboxGenerateResponse
 
   UPROPERTY()
   FString status = TEXT("");
+
+  UPROPERTY()
+  FString error_message = TEXT("");
 };
 
 USTRUCT()
@@ -118,13 +125,13 @@ struct FSkyboxGenerateRequest
   FString prompt = TEXT("");
 
   UPROPERTY()
-  FString negative_text = TEXT("");
+  FString negative_text = SkyboxAiHttpClientDefinitions::GIgnoreStringJsonFieldValue;
 
   UPROPERTY()
   bool enhance_prompt = false;
 
   UPROPERTY()
-  int skybox_style_id = 0;
+  int skybox_style_id = INDEX_NONE;
 };
 
 UCLASS()
@@ -151,4 +158,6 @@ protected:
 
   virtual bool IsClientValid() const;
   virtual bool ShouldShowPremiumContent() const;
+  virtual bool RemovePostUnsetFields(const FSkyboxGenerateRequest &Data, FString *OutBody) const;
+  virtual FString GetStylesResponseKeysHyphensToUnderscore(const FString &Body) const;
 };

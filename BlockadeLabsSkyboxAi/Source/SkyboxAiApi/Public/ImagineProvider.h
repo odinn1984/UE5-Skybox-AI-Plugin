@@ -7,7 +7,7 @@ class USKyboxAiHttpClient;
 
 struct FImagineGetExportsResponse;
 
-typedef TFunction<void(FImagineGetExportsResponse *, int StatusCode, bool bConnectedSuccessfully)> FGetRequestsCallback;
+typedef TFunction<void(FImagineGetExportsResponse *, int StatusCode, bool bConnectedSuccessfully)> FGetRequestsObfuscatedIdCallback;
 
 USTRUCT()
 struct FImagineGetExportsResponseRequest
@@ -25,6 +25,9 @@ struct FImagineGetExportsResponseRequest
 
   UPROPERTY()
   FString file_url = TEXT("");
+
+  UPROPERTY()
+  FString depth_map_url = TEXT("");
 
   UPROPERTY()
   FString title = TEXT("");
@@ -49,7 +52,7 @@ public:
 
   void SetClient(USKyboxAiHttpClient *InAPIClient);
 
-  virtual void GetRequests(const FString Id, FGetRequestsCallback Callback) const;
+  virtual void GetRequestsObfuscatedId(const FString Id, FGetRequestsObfuscatedIdCallback Callback) const;
 
 private:
   UPROPERTY()

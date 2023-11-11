@@ -1,8 +1,12 @@
 ﻿#include "SkyboxAiApi.h"
+
+#include "AssetToolsModule.h"
 #include "SkyboxProvider.h"
 #include "ImagineProvider.h"
 #include "BlockadeLabsSkyboxAiSettings.h"
+#include "HttpModule.h"
 #include "SKyboxAiHttpClient.h"
+#include "Interfaces/IHttpResponse.h"
 
 DEFINE_LOG_CATEGORY(SkyboxAiApi);
 
@@ -17,32 +21,31 @@ USkyboxApi::USkyboxApi()
   ImagineProvider->SetClient(ApiClient);
 }
 
-void USkyboxApi::SaveExportedImage(const FString &Id) const
+void USkyboxApi::SaveExportedImage(const FString &ImageUrl, TFunction<void(bool bSuccess)> Callback) const
 {
   if (!IsClientValid()) return;
 
-  Imagine()->GetRequests(
-    Id,
-    [this](FImagineGetExportsResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+  const UBlockadeLabsSkyboxAiSettings *EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
+  const FString SaveDirectory = FPaths::ProjectContentDir() + EditorSettings->SaveDirectory;
+
+  if (!FPaths::DirectoryExists(SaveDirectory))
+  {
+    FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SaveDirectory);
+  }
+
+  FString FileName = FPaths::GetCleanFilename(ImageUrl);
+
+  const int32 QueryParamIndex = FileName.Find(TEXT("?ver="), ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+  if (QueryParamIndex != INDEX_NONE) FileName = FileName.Left(QueryParamIndex);
+
+  const FString SavePath = FPaths::Combine(SaveDirectory, FileName);
+
+  DownloadImage(
+    ImageUrl,
+    [this, SavePath, Callback](TArray<uint8> ExportedImage, bool bSuccess)
     {
-      if (!ValidateExportedImageCall(Response, StatusCode, bConnectedSuccessfully)) return;
-
-      const UBlockadeLabsSkyboxAiSettings *EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
-      const FString SaveDirectory = EditorSettings->SaveDirectory;
-      const FString ImageUrl = Response->request.file_url;
-      const FString Title = Response->request.title;
-      const FString SavePath = FPaths::Combine(SaveDirectory, Title);
-      const FString SaveDir = FPaths::GetPath(SavePath);
-
-      if (!FPaths::DirectoryExists(SaveDir))
-      {
-        FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SaveDir);
-      }
-
-      // DownloadImage(ImageUrl, [this, SavePath](TArray<uint8> ExportedImage)
-      // {
-      //   FFileHelper::SaveArrayToFile(ExportedImage, *SavePath);
-      // });
+      if (bSuccess) FFileHelper::SaveArrayToFile(ExportedImage, *SavePath);
+      Callback(bSuccess);
     }
     );
 }
@@ -51,27 +54,35 @@ bool USkyboxApi::IsClientValid() const
 {
   if (ApiClient == nullptr)
   {
-    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(FText::FromString(TEXT("Client wasn't initialized")));
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
+      FText::FromString(TEXT("Client wasn't initialized"))
+      );
     return false;
   }
 
   return true;
 }
 
-bool USkyboxApi::ValidateExportedImageCall(
-  FImagineGetExportsResponse *Response,
-  int StatusCode,
-  bool bConnectedSuccessfully) const
+void USkyboxApi::DownloadImage(
+  const FString &ImageUrl,
+  TFunction<void(TArray<uint8> ExportedImage, bool bSuccess)> Callback) const
 {
-  if (!bConnectedSuccessfully || Response == nullptr || StatusCode >= 300)
-  {
-    return false;
-  }
+  TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = FHttpModule::Get().CreateRequest();
+  HttpRequest->OnProcessRequestComplete().BindLambda(
+    [Callback](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bConnectedSuccessfully)
+    {
+      if (bConnectedSuccessfully && Res.IsValid() && Res->GetContentLength() > 0)
+      {
+        Callback(Res->GetContent(), true);
+      }
+      else
+      {
+        Callback(TArray<uint8>(), false);
+      }
+    }
+    );
 
-  if (Response->request.status != TEXT("complete"))
-  {
-    return false;
-  }
-
-  return true;
+  HttpRequest->SetURL(ImageUrl);
+  HttpRequest->SetVerb(SkyboxAiHttpClientDefinitions::HTTPVerbs::GGet);
+  HttpRequest->ProcessRequest();
 }

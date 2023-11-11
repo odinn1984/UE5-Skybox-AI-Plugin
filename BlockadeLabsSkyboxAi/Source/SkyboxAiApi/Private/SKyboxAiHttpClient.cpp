@@ -21,7 +21,7 @@ void USKyboxAiHttpClient::MakeAPIRequest(
   const FString &Endpoint,
   const FSkyboxAiHttpHeaders &Headers,
   const FString &Body,
-  FSkyboxAiHttpCallback Callback) const
+  FSkyboxAiHttpCallback Callback)
 {
   const UBlockadeLabsSkyboxAiSettings *EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
   const FString ApiKey = EditorSettings->ApiKey;
@@ -38,7 +38,6 @@ void USKyboxAiHttpClient::MakeAPIRequest(
 
   if (!Body.Equals(TEXT(""))) Request->SetContentAsString(Body);
 
-  Request->ProcessRequest();
   Request->OnProcessRequestComplete().BindLambda(
     [this, Callback](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bConnectedSuccessfully)
     {
@@ -63,19 +62,24 @@ void USKyboxAiHttpClient::MakeAPIRequest(
       Callback(ResBody, StatusCode, bConnectedSuccessfully);
     }
     );
+
+  Request->ProcessRequest();
 }
 
-void USKyboxAiHttpClient::HandleHttpResponse(FHttpResponseRef Response) const
+void USKyboxAiHttpClient::HandleHttpResponse(FHttpResponseRef Response)
 {
   const int StatusCode = Response->GetResponseCode();
 
   if (StatusCode < 300) return;
 
   EMessageSeverity::Type Severity = EMessageSeverity::Warning;
-  FString ErrorMessage = TEXT("Unexpected error occurred");
-  FSkyboxApiError *ParsedResponse = DeserializeJsonToUStruct<FSkyboxApiError>(Response->GetContentAsString());
+  FString ErrorMessage = Response->GetContentAsString();
+  FSkyboxApiError ParsedResponse;
 
-  if (ParsedResponse != nullptr) ErrorMessage = ParsedResponse->error;
+  if (!DeserializeJsonToUStruct<FSkyboxApiError>(Response->GetContentAsString(), &ParsedResponse) && !ParsedResponse.error.IsEmpty())
+  {
+    ErrorMessage = ParsedResponse.error;
+  }
   if (StatusCode >= 500) Severity = EMessageSeverity::Error;
 
   FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)

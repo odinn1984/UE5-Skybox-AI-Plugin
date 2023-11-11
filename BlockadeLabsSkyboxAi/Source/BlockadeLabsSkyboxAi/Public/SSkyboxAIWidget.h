@@ -67,6 +67,9 @@ private:
 
   FSkyboxAiWidgetData WidgetData;
 
+  TAtomic<bool> bGeneratePolling = false;
+  TAtomic<bool> bExportPolling = false;
+
   TWeakObjectPtr<USkyboxApi> SkyboxApi;
   TWeakObjectPtr<UBlockadeLabsSkyboxAiSettings> PluginSettings;
   TSharedPtr<SNotificationItem> RefreshListsNotification;
@@ -132,6 +135,10 @@ private:
 
   FReply OnGenerateClicked();
   bool ValidateGenerateData() const;
+  void StartPollingGenerationStatus(const FString &SkyboxId);
+  void PollGenerationStatus(const FString &SkyboxId);
+  void StartPollingExportStatus(const FString &SkyboxId);
+  void PollExportStatus(const FString &SkyboxId);
   FReply OnRefreshLists();
   void ExecuteRefreshListAsync();
 

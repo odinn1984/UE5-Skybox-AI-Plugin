@@ -14,6 +14,8 @@ class FHttpModule;
 namespace SkyboxAiHttpClientDefinitions
 {
   const static FName GMessageLogName = TEXT("SkyboxAI");
+  const static FString GIgnoreStringJsonFieldValue = TEXT("IGNOREME");
+  const static FString JsonFailureString = TEXT("--FAILURE--");
 
   namespace HTTPVerbs
   {
@@ -60,73 +62,68 @@ public:
     const FString &Endpoint,
     const FSkyboxAiHttpHeaders &Headers,
     const FString &Body,
-    FSkyboxAiHttpCallback Callback) const;
+    FSkyboxAiHttpCallback Callback);
 
-  template <typename T> static FString *SerializeJson(const T &Object);
-  template <typename T> static FString *SerializeJson(const TArray<T> &Object);
-  template <typename T> static T *DeserializeJsonToUStruct(const FString &Body);
-  template <typename T> static TArray<T> DeserializeJsonToUStructArray(const FString &Body);
+  template <typename T> bool SerializeJson(const T &Object, FString &OutString);
+  template <typename T> bool SerializeJson(const TArray<T> &Object, FString &OutString);
+  template <typename T> bool DeserializeJsonToUStruct(const FString &Body, T *OutObject);
+  template <typename T> bool DeserializeJsonToUStructArray(const FString &Body, TArray<T> *OutArray);
 
 private:
   FHttpModule *Http;
 
-  void HandleHttpResponse(FHttpResponseRef Res) const;
+  void HandleHttpResponse(FHttpResponseRef Res);
 };
 
-template <typename T> FString *USKyboxAiHttpClient::SerializeJson(const T &Object)
+template <typename T> bool USKyboxAiHttpClient::SerializeJson(const T &Object, FString &OutString)
 {
-  FString OutputString;
-
-  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutputString, 0, 0))
+  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutString, 0, 0))
   {
-    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(FText::FromString(TEXT("Serialization from JSON failed")));
-    return nullptr;
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
+      FText::FromString(TEXT("Serialization from JSON failed"))
+      );
+    return false;
   }
 
-  return &OutputString;
+  return true;
 }
 
-template <typename T> FString *USKyboxAiHttpClient::SerializeJson(const TArray<T> &Object)
+template <typename T> bool USKyboxAiHttpClient::SerializeJson(const TArray<T> &Object, FString &OutString)
 {
-  FString OutputString;
-
-  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutputString, 0, 0))
+  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutString, 0, 0))
   {
     FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
       .Error(FText::FromString(TEXT("Serialization from JSON failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Object.ToString())));
-    return nullptr;
+    return false;
   }
 
-  return &OutputString;
+  return true;
 }
 
-template <typename T> T *USKyboxAiHttpClient::DeserializeJsonToUStruct(const FString &Body)
+template <typename T> bool USKyboxAiHttpClient::DeserializeJsonToUStruct(const FString &Body, T *OutObject)
 {
-  T OutObject;
-
-  if (!FJsonObjectConverter::JsonObjectStringToUStruct(Body, &OutObject, 0, 0))
+  if (!FJsonObjectConverter::JsonObjectStringToUStruct(Body, OutObject, 0, 0))
   {
     FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
       .Error(FText::FromString(TEXT("Deserialization to JSON failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Body)));
-    return nullptr;
+    return false;
   }
 
-  return &OutObject;
+  return true;
 }
 
-template <typename T> TArray<T> USKyboxAiHttpClient::DeserializeJsonToUStructArray(const FString &Body)
+template <typename T> bool USKyboxAiHttpClient::DeserializeJsonToUStructArray(const FString &Body, TArray<T> *OutArray)
 {
-  TArray<T> OutObject;
-
-  if (!FJsonObjectConverter::JsonArrayStringToUStruct(Body, &OutObject, 0, 0))
+  if (!FJsonObjectConverter::JsonArrayStringToUStruct(Body, OutArray, 0, 0))
   {
+    OutArray = new TArray<T>();
     FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
-      .Error(FText::FromString(TEXT("Deserialization to JSON failed")))
+      .Error(FText::FromString(TEXT("Deserialization to JSON Array failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Body)));
-    return TArray<T>();
+    return false;
   }
 
-  return OutObject;
+  return true;
 }

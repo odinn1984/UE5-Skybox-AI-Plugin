@@ -33,7 +33,7 @@ public:
 
   FORCEINLINE void SetClient(USKyboxAiHttpClient *InAPIClient) { ApiClient = InAPIClient; }
 
-  void SaveExportedImage(const FString &Id) const;
+  void SaveExportedImage(const FString &ImageUrl, TFunction<void(bool bSuccess)> Callback) const;
 
 protected:
   virtual bool IsClientValid() const;
@@ -48,8 +48,7 @@ private:
   UPROPERTY()
   TObjectPtr<UImagineProvider> ImagineProvider;
 
-  bool ValidateExportedImageCall(
-    FImagineGetExportsResponse *Response,
-    int StatusCode,
-    bool bConnectedSuccessfully) const;
+  void DownloadImage(
+    const FString &ImageUrl,
+    TFunction<void(TArray<uint8> ExportedImage, bool bSuccess)> Callback) const;
 };
