@@ -9,7 +9,7 @@ typedef TSharedPtr<SListView<TSharedPtr<FText>>> FSkyboxAiWidgetListView;
 typedef std::tuple<int, FString, int, int> FSkyboxAiStylesTuple;
 typedef std::tuple<int, FString> FSkyboxAiExportTypesTuple;
 
-#define DEFAULT_ID 0
+#define DEFAULT_ID INDEX_NONE
 #define DEFAULT_MAX_TEXT_LEN 500
 
 #define TUPLE_KEY_IDX 0
@@ -58,6 +58,7 @@ public:
   SLATE_END_ARGS()
 
   inline static const FText RefreshListsNotificationTitle = FText::FromString(TEXT("Refresh Lists"));
+  inline static const FText RefreshListConfirmationTitle = FText::FromString(TEXT("Refresh Lists?"));
   inline static const FText GenerateSkyboxNotificationTitle = FText::FromString(TEXT("Generate Skybox"));
   inline static const FText RemixSkyboxNotificationTitle = FText::FromString(TEXT("Remix Skybox"));
   inline static const FText ImportSkyboxNotificationTitle = FText::FromString(TEXT("Import Skybox"));
@@ -70,6 +71,7 @@ private:
 
   FSkyboxAiWidgetData WidgetData;
 
+  bool bStartingUp = true;
   TAtomic<bool> bGeneratePolling = false;
   TAtomic<bool> bExportPolling = false;
 
@@ -105,13 +107,14 @@ private:
     const FSkyboxAiWidgetListView &OutListView,
     const TMap<int, EntryType> &InList,
     TupleType &CurrentValue,
-    const FString &InListSource,
+    const bool bSelectFirstAsDefault,
     TFunction<FText(const EntryType &)> GetText);
   template <typename EntryType, typename TupleType> void UpdateListViewSelection(
     const FSkyboxAiWidgetListView &ListView,
     TMap<int, EntryType> &Map,
     TArray<TSharedPtr<FText>> &List,
     TupleType &CurrentValue,
+    const bool bSelectFirstAsDefault,
     TFunction<FText(const EntryType &)> GetText);
   template <typename EntryType, typename TupleType> int SetMapNthValueToCurrentValue(
     TMap<int, EntryType> &Map,
@@ -152,7 +155,7 @@ private:
   FReply OnRemixClicked();
   void ExecuteRemix(const uint32 SkyboxImagineId);
   FReply OnRefreshLists();
-  void ExecuteRefreshListAsync();
+  void ExecuteRefreshList();
   void SetButtonsEnabled(const bool bEnabled) const;
 
   void UpdateTextCharacterCount(
@@ -166,6 +169,8 @@ private:
     const FText &Title,
     const FText &Message,
     const SNotificationItem::ECompletionState State);
+
+  void ShowModal(const FText &Title, TFunction<void(const uint32)> OnConfirm);
 
   void NotifyWidgetDataUpdated() const;
 
@@ -186,7 +191,7 @@ template <typename EntryType, typename TupleType> void SSkyboxAiWidget::LoadView
   const FSkyboxAiWidgetListView &OutListView,
   const TMap<int, EntryType> &InList,
   TupleType &CurrentValue,
-  const FString &InListSource,
+  const bool bSelectFirstAsDefault,
   TFunction<FText(const EntryType &)> GetText)
 {
   for (auto &Item : InList)
@@ -200,7 +205,7 @@ template <typename EntryType, typename TupleType> void SSkyboxAiWidget::LoadView
     return ShowMessage(
       RefreshListsNotification,
       RefreshListsNotificationTitle,
-      FText::FromString(FString::Printf(TEXT("[%s] Invalid List View Provided"), *InListSource)),
+      FText::FromString(FString::Printf(TEXT("[%s] Invalid List View Provided"), *typeid(EntryType).name())),
       SNotificationItem::CS_Fail
       );
   }
@@ -210,6 +215,7 @@ template <typename EntryType, typename TupleType> void SSkyboxAiWidget::LoadView
     OutValues,
     OutFilteredValues,
     CurrentValue,
+    bSelectFirstAsDefault,
     GetText
     );
 }
@@ -219,6 +225,7 @@ template <typename EntryType, typename TupleType> void SSkyboxAiWidget::UpdateLi
   TMap<int, EntryType> &Map,
   TArray<TSharedPtr<FText>> &List,
   TupleType &CurrentValue,
+  const bool bSelectFirstAsDefault,
   TFunction<FText(const EntryType &)> GetText)
 {
   const FString Value = std::get<TUPLE_VALUE_IDX>(CurrentValue);
@@ -228,6 +235,8 @@ template <typename EntryType, typename TupleType> void SSkyboxAiWidget::UpdateLi
   {
     return Item->EqualTo(FText::FromString(Value));
   };
+
+  if (ListView.IsValid()) ListView->ClearSelection();
 
   int MapId = INDEX_NONE;
 
@@ -239,7 +248,7 @@ template <typename EntryType, typename TupleType> void SSkyboxAiWidget::UpdateLi
     }
   }
 
-  if (List.Num() > 0 && MapId == INDEX_NONE)
+  if (List.Num() > 0 && MapId == INDEX_NONE && bSelectFirstAsDefault)
   {
     MapId = SetMapNthValueToCurrentValue<EntryType, TupleType>(Map, 0, CurrentValue);
   }

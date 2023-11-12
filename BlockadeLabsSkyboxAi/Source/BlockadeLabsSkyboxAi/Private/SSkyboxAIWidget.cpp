@@ -54,6 +54,7 @@ void SSkyboxAiWidget::Construct(const FArguments &InArgs)
     [Widget.ToSharedRef()];
 
   OnRefreshLists();
+  bStartingUp = false;
 }
 
 void SSkyboxAiWidget::LoadCategoriesFromList(const FSkyboxAiStyles &List)
@@ -64,7 +65,7 @@ void SSkyboxAiWidget::LoadCategoriesFromList(const FSkyboxAiStyles &List)
     CategoryListView,
     List,
     WidgetData.Category,
-    TEXT("Categories"),
+    false,
     [this](const FSkyboxListEntry &Item)
     {
       return FText::FromString(Item.Name);
@@ -80,7 +81,7 @@ void SSkyboxAiWidget::LoadExportTypesFromList(const FSkyboxAiExportTypes &List)
     ExportTypeListView,
     List,
     WidgetData.ExportType,
-    TEXT("Export Types"),
+    true,
     [this](const FString &Item)
     {
       return FText::FromString(Item);
@@ -217,6 +218,7 @@ void SSkyboxAiWidget::OnExportTypeSearchTextChanged(const FText &NewText)
     ExportTypes,
     FilteredExportTypes,
     WidgetData.ExportType,
+    true,
     [this](const FString &Item)
     {
       return FText::FromString(Item);
@@ -385,6 +387,7 @@ void SSkyboxAiWidget::OnCategorySearchTextChanged(const FText &NewText)
     Categories,
     FilteredCategories,
     WidgetData.Category,
+    false,
     [this](const FSkyboxListEntry &Item)
     {
       return FText::FromString(Item.Name);
@@ -410,10 +413,15 @@ void SSkyboxAiWidget::OnCategorySelected(TSharedPtr<FText> InItem, ESelectInfo::
   const int *ValueId = Categories.FindKey(FSkyboxListEntry(NewValue));
   const int FinalId = ValueId == nullptr ? -1 : *ValueId;
 
-  if (FinalId == -1) return;
-
-  const auto [Name, PromptMaxLen, NegativeTextMaxLen] = Categories[FinalId];
-  WidgetData.Category = std::make_tuple(FinalId, NewValue, PromptMaxLen, NegativeTextMaxLen);
+  if (FinalId == INDEX_NONE && NewValue.TrimStartAndEnd().Len() == 0)
+  {
+    WidgetData.Category = std::make_tuple(DEFAULT_ID, TEXT(""), DEFAULT_MAX_TEXT_LEN, DEFAULT_MAX_TEXT_LEN);
+  }
+  else
+  {
+    const auto [Name, PromptMaxLen, NegativeTextMaxLen] = Categories[FinalId];
+    WidgetData.Category = std::make_tuple(FinalId, NewValue, PromptMaxLen, NegativeTextMaxLen);
+  }
 
   UpdateTextCharacterCount(TEXT("Prompt"), PromptLabel, PromptTextBox, TUPLE_PROMPT_MAX_LEN_IDX);
   UpdateTextCharacterCount(
@@ -878,26 +886,7 @@ void SSkyboxAiWidget::PollExportStatus(const FString &SkyboxId)
 FReply SSkyboxAiWidget::OnImportClicked()
 {
   SetButtonsEnabled(false);
-  TSharedRef<SWindow> DialogWindow =
-    SNew(SWindow).Title(SSkyboxAiWidget::ImportSkyboxNotificationTitle)
-                 .ClientSize(FVector2D(350, 100))
-                 .SupportsMinimize(false)
-                 .SupportsMaximize(false)
-                 .SizingRule(ESizingRule::FixedSize)
-                 .IsTopmostWindow(true);
-
-  TSharedPtr<SInputDialogWidget> InputDialog =
-    SNew(SInputDialogWidget).ParentWindow(DialogWindow)
-                            .DialogTitle(FText::FromString(TEXT("Enter Skybox ID")))
-                            .OnConfirm_Lambda([this](const uint32 Id) { ExecuteImport(Id); })
-                            .OnCancel_Lambda([this]() { SetButtonsEnabled(true); });
-
-  DialogWindow->SetContent(InputDialog.ToSharedRef());
-  DialogWindow->SetOnWindowClosed(
-    FOnWindowClosed::CreateLambda([this](const TSharedRef<SWindow> &Window) { SetButtonsEnabled(true); })
-    );
-
-  FSlateApplication::Get().AddWindow(DialogWindow);
+  ShowModal(SSkyboxAiWidget::ImportSkyboxNotificationTitle, [this](const uint32 Id) { ExecuteImport(Id); });
 
   return FReply::Handled();
 }
@@ -968,26 +957,7 @@ FReply SSkyboxAiWidget::OnRemixClicked()
   if (!ValidateGenerateData()) return FReply::Handled();
 
   SetButtonsEnabled(false);
-  TSharedRef<SWindow> DialogWindow =
-    SNew(SWindow).Title(SSkyboxAiWidget::RemixSkyboxNotificationTitle)
-                 .ClientSize(FVector2D(350, 100))
-                 .SupportsMinimize(false)
-                 .SupportsMaximize(false)
-                 .SizingRule(ESizingRule::FixedSize)
-                 .IsTopmostWindow(true);
-
-  TSharedPtr<SInputDialogWidget> InputDialog =
-    SNew(SInputDialogWidget).ParentWindow(DialogWindow)
-                            .DialogTitle(FText::FromString(TEXT("Enter Skybox ID")))
-                            .OnConfirm_Lambda([this](const uint32 Id) { ExecuteRemix(Id); })
-                            .OnCancel_Lambda([this]() { SetButtonsEnabled(true); });
-
-  DialogWindow->SetContent(InputDialog.ToSharedRef());
-  DialogWindow->SetOnWindowClosed(
-    FOnWindowClosed::CreateLambda([this](const TSharedRef<SWindow> &Window) { SetButtonsEnabled(true); })
-    );
-
-  FSlateApplication::Get().AddWindow(DialogWindow);
+  ShowModal(SSkyboxAiWidget::RemixSkyboxNotificationTitle, [this](const uint32 Id) { ExecuteRemix(Id); });
 
   return FReply::Handled();
 }
@@ -1010,21 +980,44 @@ void SSkyboxAiWidget::ExecuteRemix(const uint32 SkyboxImagineId)
 
 FReply SSkyboxAiWidget::OnRefreshLists()
 {
+  if (!bStartingUp)
+  {
+    auto Answer = FMessageDialog::Open(
+      EAppMsgCategory::Error,
+      EAppMsgType::OkCancel,
+      FText::FromString(TEXT("Refreshing lists will revert to default selection, are you sure?")),
+      SSkyboxAiWidget::RefreshListConfirmationTitle
+      );
+
+    if (Answer == EAppReturnType::Cancel) return FReply::Handled();
+  }
+
   Categories.Empty();
   FilteredCategories.Empty();
 
   ExportTypes.Empty();
   FilteredExportTypes.Empty();
 
-  if (CategoryListView.IsValid()) CategoryListView->RequestListRefresh();
-  if (ExportTypeListView.IsValid()) ExportTypeListView->RequestListRefresh();
+  WidgetData.Category = std::make_tuple(DEFAULT_ID, TEXT(""), DEFAULT_MAX_TEXT_LEN, DEFAULT_MAX_TEXT_LEN);
+  WidgetData.ExportType = std::make_tuple(DEFAULT_ID, TEXT(""));
 
-  ExecuteRefreshListAsync();
+  if (CategoryListView.IsValid())
+  {
+    CategoryListView->ClearSelection();
+    CategoryListView->RequestListRefresh();
+  }
+  if (ExportTypeListView.IsValid())
+  {
+    ExportTypeListView->ClearSelection();
+    ExportTypeListView->RequestListRefresh();
+  }
+
+  ExecuteRefreshList();
 
   return FReply::Handled();
 }
 
-void SSkyboxAiWidget::ExecuteRefreshListAsync()
+void SSkyboxAiWidget::ExecuteRefreshList()
 {
   SetButtonsEnabled(false);
   ShowMessage(
@@ -1175,6 +1168,30 @@ void SSkyboxAiWidget::ShowMessage(
       Notification.Reset();
     }
   }
+}
+
+void SSkyboxAiWidget::ShowModal(const FText &Title, TFunction<void(const uint32)> OnConfirm)
+{
+  TSharedRef<SWindow> DialogWindow =
+    SNew(SWindow).Title(Title)
+                 .ClientSize(FVector2D(350, 100))
+                 .SupportsMinimize(false)
+                 .SupportsMaximize(false)
+                 .SizingRule(ESizingRule::FixedSize)
+                 .IsTopmostWindow(true);
+
+  TSharedPtr<SInputDialogWidget> InputDialog =
+    SNew(SInputDialogWidget).ParentWindow(DialogWindow)
+                            .OnConfirm_Lambda(OnConfirm)
+                            .OnCancel_Lambda([this]() { SetButtonsEnabled(true); });
+
+  DialogWindow->SetContent(InputDialog.ToSharedRef());
+  DialogWindow->SetAsModalWindow();
+  DialogWindow->SetOnWindowClosed(
+    FOnWindowClosed::CreateLambda([this](const TSharedRef<SWindow> &Window) { SetButtonsEnabled(true); })
+    );
+
+  FSlateApplication::Get().AddModalWindow(DialogWindow, nullptr);
 }
 
 void SSkyboxAiWidget::NotifyWidgetDataUpdated() const
