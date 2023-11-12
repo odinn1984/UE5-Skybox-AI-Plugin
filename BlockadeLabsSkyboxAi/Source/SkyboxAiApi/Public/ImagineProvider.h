@@ -31,6 +31,18 @@ struct FImagineGetExportsResponseRequest
 
   UPROPERTY()
   FString title = TEXT("");
+
+  UPROPERTY()
+  FString prompt = TEXT("");
+
+  UPROPERTY()
+  FString negative_text = TEXT("");
+
+  UPROPERTY()
+  int skybox_style_id = INDEX_NONE;
+
+  UPROPERTY()
+  FString skybox_style_name = TEXT("");
 };
 
 USTRUCT()
@@ -52,6 +64,7 @@ public:
 
   void SetClient(USKyboxAiHttpClient *InAPIClient);
 
+  virtual void GetRequests(const uint32 Id, FGetRequestsObfuscatedIdCallback Callback) const;
   virtual void GetRequestsObfuscatedId(const FString Id, FGetRequestsObfuscatedIdCallback Callback) const;
 
 private:

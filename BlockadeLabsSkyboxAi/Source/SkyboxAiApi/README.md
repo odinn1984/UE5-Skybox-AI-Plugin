@@ -53,5 +53,6 @@ This provider implements logic for the following endpoints:
 
 | Method | Endpoint                                                                                                                       | Description                                                                                                               |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| GET    | [/imagine/requests/obfuscated-id/{id}](https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-obfuscated-id) | used to poll the generation process of our skybox so that once it's generated we can export it and save it to our project |
+| GET    | [/imagine/requests/{id}](https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-id) | Used to implement the functionality of import |
+| GET    | [/imagine/requests/obfuscated-id/{id}](https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-obfuscated-id) | Used to poll the generation process of our skybox so that once it's generated we can export it and save it to our project |
 

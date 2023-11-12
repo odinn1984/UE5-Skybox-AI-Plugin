@@ -37,6 +37,8 @@ void USkyboxProvider::Post(const FSkyboxGenerateRequest &Data, FPostCallback Cal
     return;
   }
 
+  UE_LOG(LogTemp, Warning, TEXT("SanitizedBody: %s"), *SanitizedBody);
+
   FSkyboxAiHttpHeaders Headers = FSkyboxAiHttpHeaders();
   Headers.Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GPost;
 
@@ -239,6 +241,14 @@ bool USkyboxProvider::RemovePostUnsetFields(const FSkyboxGenerateRequest &Data, 
   )
   {
     FilteredJsonObj->RemoveField(TEXT("skybox_style_id"));
+  }
+
+  if (
+    FilteredJsonObj->HasField(TEXT("remix_imagine_id")) &&
+    FilteredJsonObj->GetIntegerField(TEXT("remix_imagine_id")) == INDEX_NONE
+  )
+  {
+    FilteredJsonObj->RemoveField(TEXT("remix_imagine_id"));
   }
 
   TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(OutBody);

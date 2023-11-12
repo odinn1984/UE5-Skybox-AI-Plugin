@@ -14,6 +14,23 @@ void UImagineProvider::SetClient(USKyboxAiHttpClient *InAPIClient)
   IsClientValid();
 }
 
+void UImagineProvider::GetRequests(const uint32 Id, FGetRequestsObfuscatedIdCallback Callback) const
+{
+  if (!IsClientValid()) return;
+
+  ApiClient->MakeAPIRequest(
+    TEXT("/imagine/requests/" + FString::FromInt(Id)),
+    FSkyboxAiHttpHeaders(),
+    TEXT(""),
+    [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
+    {
+      FImagineGetExportsResponse Response;
+      ApiClient->DeserializeJsonToUStruct<FImagineGetExportsResponse>(Body, &Response);
+      Callback(&Response, StatusCode, bConnectedSuccessfully);
+    }
+    );
+}
+
 void UImagineProvider::GetRequestsObfuscatedId(const FString Id, FGetRequestsObfuscatedIdCallback Callback) const
 {
   if (!IsClientValid()) return;

@@ -13,25 +13,23 @@ void SInputDialogWidget::Construct(const FArguments &InArgs)
   [
     SNew(SVerticalBox)
 
-    + SVerticalBox::Slot()
-      .Padding(10)
-      .AutoHeight()
+    + SVerticalBox::Slot().Padding(10)
+                          .AutoHeight()
     [
       SAssignNew(InputField, SEditableTextBox)
     ]
 
-    + SVerticalBox::Slot()
-      .Padding(10)
-      .AutoHeight()
+    + SVerticalBox::Slot().Padding(10)
+                          .HAlign(HAlign_Center)
+                          .AutoHeight()
     [
       SNew(SHorizontalBox)
 
-      + SHorizontalBox::Slot()
-      .AutoWidth()
+      + SHorizontalBox::Slot().Padding(10)
+                              .AutoWidth()
       [
-        SNew(SButton)
-            .Text(FText::FromString(TEXT("Confirm")))
-            .OnClicked_Lambda(
+        SNew(SButton).Text(FText::FromString(TEXT("Confirm")))
+                     .OnClicked_Lambda(
                        [this]() -> FReply
                        {
                          if (!IsInputValid())
@@ -57,12 +55,11 @@ void SInputDialogWidget::Construct(const FArguments &InArgs)
                        )
       ]
 
-      + SHorizontalBox::Slot()
-      .AutoWidth()
+      + SHorizontalBox::Slot().Padding(10)
+                              .AutoWidth()
       [
-        SNew(SButton)
-            .Text(FText::FromString(TEXT("Cancel")))
-            .OnClicked_Lambda(
+        SNew(SButton).Text(FText::FromString(TEXT("Cancel")))
+                     .OnClicked_Lambda(
                        [this]() -> FReply
                        {
                          // ReSharper disable once CppExpressionWithoutSideEffects

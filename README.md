@@ -1,4 +1,4 @@
-# Blockade Labs Skybox AI Plugin
+# Blockade Labs SkyboxAI Plugin For UE5
 
 This is a tool that integrates with [SkyboxAI](https://skybox.blockadelabs.com/) by [Blockade Labs](https://www.blockadelabs.com/)
 
@@ -10,27 +10,38 @@ If you are interested in knowing more about Blockade Labs and Skybox AI please t
 
 ## Table Of Content
 
-- [Blockade Labs Skybox AI Plugin](#blockade-labs-skybox-ai-plugin)
+- [Blockade Labs SkyboxAI Plugin For UE5](#blockade-labs-skyboxai-plugin-for-ue5)
   - [Table Of Content](#table-of-content)
   - [Requirements](#requirements)
   - [Important Notes](#important-notes)
   - [Setting Up The Plugin](#setting-up-the-plugin)
     - [Plugin Settings](#plugin-settings)
   - [Using The Plugin](#using-the-plugin)
+    - [Generating a Skybox](#generating-a-skybox)
+    - [Importing Skybox Data](#importing-skybox-data)
+    - [Remixing a Skybox](#remixing-a-skybox)
   - [Setting Up Dev Environment](#setting-up-dev-environment)
-  - [Coding Standards](#coding-standards)
+    - [Coding Standards](#coding-standards)
   - [Limitations](#limitations)
+  - [Submitting Issues / Feature Requests](#submitting-issues--feature-requests)
   - [Links And Resources](#links-and-resources)
 
 ## Requirements
 
-This plugin was tested on the following versions:
+For this plugin to work you will need to have a SkyboxAI account and an API key, please visit [SkyboxAI API Membership](https://skybox.blockadelabs.com/api-membership) page to see their pricing and create an account
 
-- 5.3
+This plugin was tested on the following versions of Unreal Engine:
+
+- [ ] 5.0
+- [ ] 5.1
+- [ ] 5.2
+- [x] 5.3
 
 This plugin was tested on the following platforms:
 
-- Windows 11
+- [x] Windows
+- [ ] Linux
+- [ ] OSX
 
 ## Important Notes
 
@@ -67,7 +78,11 @@ To setup the plugin please follow the following steps:
 
 ## Using The Plugin
 
-After setting up the plugin you can use it by following these steps:
+For more information what `Prompt`, `Negative Text` and `Enhanced Prompt` mean please go to the [SkyboxAI API docs](https://api-documentation.blockadelabs.com/api/skybox.html#generate-skybox)
+
+### Generating a Skybox
+
+In order to generate a skybox you need to follow these steps:
 
 1. Go to `Tools` -> `Blockade Labs SkyboxAI`
 2. Enter the description of the skybox that you want to generate in `Prompt` field
@@ -81,7 +96,33 @@ After setting up the plugin you can use it by following these steps:
 8. Press on `Generate Skybox` and wait, please do not close the plugin tab while it's generating the skybox. The plugin will notify you on progress and when it's done
 9.  At the end, it will download the image and put it in the directory that you have specified in the plugin settings and UE will give you a prompt asking if you want to re-import the asset since the directory it monitors has changed. Please re-import the assets and follow the instructions for that process that UE provides
 
-For more information what `Prompt`, `Negative Text` and `Enhanced Prompt` mean please go to the [SkyboxAI API docs](https://api-documentation.blockadelabs.com/api/skybox.html#generate-skybox)
+### Importing Skybox Data
+
+In order to import a skybox you need to follow these steps:
+
+1. Go to your [Dashboard](https://skybox.blockadelabs.com/profile/history) on SkyboxAI
+2. Choose the skybox that you want to remix and and click on it
+   1. You can get the details that this image was generated with (if for example you want to use the same prompt or negative text etc...)
+   2. Clink on "View" and it will open this image in a new tab and copy the title of the image (e.g: if the title is `World #1234` then `1234` is the ID of the image)
+3. Go to `Tools` -> `Blockade Labs SkyboxAI`
+4. Click on the `Import...` button
+5. Fill in the ID that you have copied from the URL in the prompt that will show up and press "Confirm"
+6. This will fill in the Style, Prompt and Negative Text fields with the information that was used to generate the skybox with the ID that you have provided
+
+### Remixing a Skybox
+
+In order to remix a skybox you need to follow these steps:
+
+1. Go to your [Dashboard](https://skybox.blockadelabs.com/profile/history) on SkyboxAI
+2. Choose the skybox that you want to remix and and click on it
+   1. You can get the details that this image was generated with (if for example you want to use the same prompt or negative text etc...)
+   2. Clink on "View" and it will open this image in a new tab and copy the title of the image (e.g: if the title is `World #1234` then `1234` is the ID of the image)
+3. Go to `Tools` -> `Blockade Labs SkyboxAI`
+4. Fill in all the information that you want to send just as if you were creating a new skybox
+   1. This part can be skipped if you have imported a skybox and the information was filled in automatically
+5. Click on the `Remix...` button
+6. Fill in the ID that you have copied from the URL in the prompt that will show up and press "Confirm"
+7. The rest will be the same as generating a new skybox
 
 ## Setting Up Dev Environment
 
@@ -91,7 +132,7 @@ To setup a development environment please follow these steps:
    1. If you want to introduce support for an engine versions that is not listed, contribution to this repository is very appreciated!
 2. Continue with following the steps [above](#setting-up-the-plugin) and in step number 2 put the plugin in your project's `Plugins` directory
 
-## Coding Standards
+### Coding Standards
 
 Please make sure to follow the following rules when writing code for this repository
 
@@ -109,15 +150,27 @@ Please make sure to follow the following rules when writing code for this reposi
 This plugin is currently missing a few features that are available on SkyboxAI, please see the full list of features and what is available and what is missing
 
 - [x] Generate a Skybox and export to a file
-- [ ] Remix a Skybox
-- [ ] Download depth map
+- [x] Remix a Skybox
+- [x] Import a Skybox
+- [ ] Download depth map [On the TODO list]
 - [ ] 3D features
 - [ ] Control image
-- [ ] No support for Pusher / Webhooks
+
+Support for Pusher / Webhooks will not be implemented
 
 If any of the missing features will be required I am happy to implement them or get contributions for them
 
 Any information about generated Skyboxes and history of usage can be found in the [SkyboxAI's Dashboard](https://skybox.blockadelabs.com/profile/history)
+
+## Submitting Issues / Feature Requests
+
+If you have any issues with this plugin please submit them in the [Issues](https://github.com/odinn1984/UE5-Skybox-AI-Plugin/issues) section of this repository
+
+If you have any feature requests please submit them in the [Feature Requests](https://github.com/odinn1984/UE5-Skybox-AI-Plugin/discussions/categories/suggestions-feature-requests) section of this repository
+
+Please review the [Q&A](https://github.com/odinn1984/UE5-Skybox-AI-Plugin/discussions/categories/q-a) section of this repository before submitting any issues or feature requests
+
+For general discussions please visit the [General](https://github.com/odinn1984/UE5-Skybox-AI-Plugin/discussions/categories/general) section of this repository
 
 ## Links And Resources
 

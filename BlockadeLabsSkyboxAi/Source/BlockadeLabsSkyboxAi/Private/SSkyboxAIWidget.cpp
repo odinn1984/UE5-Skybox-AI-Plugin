@@ -1,6 +1,7 @@
 ﻿#include "SSkyboxAiWidget.h"
 #include "BlockadeLabsSkyboxAiSettings.h"
 #include "ImagineProvider.h"
+#include "InputDialogWidget.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "SkyboxAiApi.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
@@ -449,8 +450,26 @@ void SSkyboxAiWidget::AddBottomRow(TSharedPtr<SVerticalBox> RootWidget)
                             .AutoWidth()
                             .Padding(40.0f, 10.0f)
     [
-      SAssignNew(GenerateButton, SButton).Text(FText::FromString(TEXT("Generate HDRI")))
+      SAssignNew(GenerateButton, SButton).Text(FText::FromString(TEXT("Generate")))
                                          .OnClicked(this, &SSkyboxAiWidget::OnGenerateClicked)
+    ]
+
+    + SHorizontalBox::Slot().HAlign(HAlign_Center)
+                            .VAlign(VAlign_Center)
+                            .AutoWidth()
+                            .Padding(40.0f, 10.0f)
+    [
+      SAssignNew(ImportButton, SButton).Text(FText::FromString(TEXT("Import...")))
+                                       .OnClicked(this, &SSkyboxAiWidget::OnImportClicked)
+    ]
+
+    + SHorizontalBox::Slot().HAlign(HAlign_Center)
+                            .VAlign(VAlign_Center)
+                            .AutoWidth()
+                            .Padding(40.0f, 10.0f)
+    [
+      SAssignNew(RemixButton, SButton).Text(FText::FromString(TEXT("Remix...")))
+                                      .OnClicked(this, &SSkyboxAiWidget::OnRemixClicked)
     ]
 
     + SHorizontalBox::Slot().HAlign(HAlign_Center)
@@ -493,8 +512,7 @@ FReply SSkyboxAiWidget::OnGenerateClicked()
 {
   if (!ValidateGenerateData()) return FReply::Handled();
 
-  if (GenerateButton.IsValid()) GenerateButton->SetEnabled(false);
-
+  SetButtonsEnabled(false);
   ShowMessage(
     GenerateSkyboxNotification,
     GenerateSkyboxNotificationTitle,
@@ -502,50 +520,8 @@ FReply SSkyboxAiWidget::OnGenerateClicked()
     SNotificationItem::CS_Pending
     );
 
-  const FString TrimmedNegativeText = WidgetData.NegativeText.ToString().TrimStartAndEnd();
-  FSkyboxGenerateRequest PostRequest;
-  PostRequest.prompt = WidgetData.Prompt.ToString().TrimStartAndEnd();
-  PostRequest.enhance_prompt = WidgetData.bEnrichPrompt;
-
-  if (TrimmedNegativeText.Len() > 0) PostRequest.negative_text = TrimmedNegativeText;
-  if (CategoryListView->GetNumItemsSelected() == 1)
-  {
-    PostRequest.skybox_style_id = std::get<TUPLE_KEY_IDX>(WidgetData.Category);
-  }
-
-  SkyboxApi->Skybox()->Post(
-    PostRequest,
-    [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
-    {
-      if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
-      {
-        if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
-        ShowMessage(
-          GenerateSkyboxNotification,
-          GenerateSkyboxNotificationTitle,
-          FText::FromString(TEXT("Failed generating Skybox, See Message Log")),
-          SNotificationItem::CS_Fail
-          );
-      }
-      else
-      {
-        if (Response->status == TEXT("error"))
-        {
-          if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
-          ShowMessage(
-            GenerateSkyboxNotification,
-            GenerateSkyboxNotificationTitle,
-            FText::FromString(FString::Printf(TEXT("Generation failed: %s"), *Response->error_message)),
-            SNotificationItem::CS_Fail
-            );
-        }
-        else
-        {
-          StartPollingGenerationStatus(Response->obfuscated_id);
-        }
-      }
-    }
-    );
+  FSkyboxGenerateRequest Request = GetGenerateRequest();
+  ExecuteGenerate(Request);
 
   return FReply::Handled();
 }
@@ -600,11 +576,64 @@ bool SSkyboxAiWidget::ValidateGenerateData() const
       EAppMsgCategory::Error,
       EAppMsgType::Ok,
       FText::FromString(FString::Join(ErrorMessage, TEXT("\r\n"))),
-      FText::FromString(TEXT("Failed validating generate data"))
+      SSkyboxAiWidget::FailedValidationTitle
       );
   }
 
   return bSuccess;
+}
+
+FSkyboxGenerateRequest SSkyboxAiWidget::GetGenerateRequest() const
+{
+  FSkyboxGenerateRequest PostRequest;
+  const FString TrimmedNegativeText = WidgetData.NegativeText.ToString().TrimStartAndEnd();
+  PostRequest.prompt = WidgetData.Prompt.ToString().TrimStartAndEnd();
+  PostRequest.enhance_prompt = WidgetData.bEnrichPrompt;
+
+  if (TrimmedNegativeText.Len() > 0) PostRequest.negative_text = TrimmedNegativeText;
+  if (CategoryListView->GetNumItemsSelected() == 1)
+  {
+    PostRequest.skybox_style_id = std::get<TUPLE_KEY_IDX>(WidgetData.Category);
+  }
+
+  return PostRequest;
+}
+
+void SSkyboxAiWidget::ExecuteGenerate(FSkyboxGenerateRequest &Request)
+{
+  SkyboxApi->Skybox()->Post(
+    Request,
+    [this](FSkyboxGenerateResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+    {
+      if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+      {
+        SetButtonsEnabled(true);
+        ShowMessage(
+          GenerateSkyboxNotification,
+          GenerateSkyboxNotificationTitle,
+          FText::FromString(TEXT("Failed generating Skybox, See Message Log")),
+          SNotificationItem::CS_Fail
+          );
+      }
+      else
+      {
+        if (Response->status == TEXT("error"))
+        {
+          SetButtonsEnabled(true);
+          ShowMessage(
+            GenerateSkyboxNotification,
+            GenerateSkyboxNotificationTitle,
+            FText::FromString(FString::Printf(TEXT("Generation failed: %s"), *Response->error_message)),
+            SNotificationItem::CS_Fail
+            );
+        }
+        else
+        {
+          StartPollingGenerationStatus(Response->obfuscated_id);
+        }
+      }
+    }
+    );
 }
 
 void SSkyboxAiWidget::StartPollingGenerationStatus(const FString &SkyboxId)
@@ -676,7 +705,7 @@ void SSkyboxAiWidget::PollGenerationStatus(const FString &SkyboxId)
 
         if (!bSuccess)
         {
-          if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+          SetButtonsEnabled(true);
           ShowMessage(
             GenerateSkyboxNotification,
             GenerateSkyboxNotificationTitle,
@@ -703,7 +732,7 @@ void SSkyboxAiWidget::PollGenerationStatus(const FString &SkyboxId)
             {
               if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
               {
-                if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+                SetButtonsEnabled(true);
                 return ShowMessage(
                   GenerateSkyboxNotification,
                   GenerateSkyboxNotificationTitle,
@@ -714,7 +743,7 @@ void SSkyboxAiWidget::PollGenerationStatus(const FString &SkyboxId)
 
               if (Response->status == TEXT("error"))
               {
-                if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+                SetButtonsEnabled(true);
                 ShowMessage(
                   GenerateSkyboxNotification,
                   GenerateSkyboxNotificationTitle,
@@ -827,7 +856,7 @@ void SSkyboxAiWidget::PollExportStatus(const FString &SkyboxId)
             Response->file_url,
             [this, SkyboxId](bool bSuccess)
             {
-              if (GenerateButton.IsValid()) GenerateButton->SetEnabled(true);
+              SetButtonsEnabled(true);
               ShowMessage(
                 GenerateSkyboxNotification,
                 GenerateSkyboxNotificationTitle,
@@ -844,6 +873,139 @@ void SSkyboxAiWidget::PollExportStatus(const FString &SkyboxId)
       }
     }
     );
+}
+
+FReply SSkyboxAiWidget::OnImportClicked()
+{
+  SetButtonsEnabled(false);
+  TSharedRef<SWindow> DialogWindow =
+    SNew(SWindow).Title(SSkyboxAiWidget::ImportSkyboxNotificationTitle)
+                 .ClientSize(FVector2D(350, 100))
+                 .SupportsMinimize(false)
+                 .SupportsMaximize(false)
+                 .SizingRule(ESizingRule::FixedSize)
+                 .IsTopmostWindow(true);
+
+  TSharedPtr<SInputDialogWidget> InputDialog =
+    SNew(SInputDialogWidget).ParentWindow(DialogWindow)
+                            .DialogTitle(FText::FromString(TEXT("Enter Skybox ID")))
+                            .OnConfirm_Lambda([this](const uint32 Id) { ExecuteImport(Id); })
+                            .OnCancel_Lambda([this]() { SetButtonsEnabled(true); });
+
+  DialogWindow->SetContent(InputDialog.ToSharedRef());
+  DialogWindow->SetOnWindowClosed(
+    FOnWindowClosed::CreateLambda([this](const TSharedRef<SWindow> &Window) { SetButtonsEnabled(true); })
+    );
+
+  FSlateApplication::Get().AddWindow(DialogWindow);
+
+  return FReply::Handled();
+}
+
+void SSkyboxAiWidget::ExecuteImport(const uint32 SkyboxImagineId)
+{
+  SetButtonsEnabled(false);
+  ShowMessage(
+    ImportNotification,
+    ImportSkyboxNotificationTitle,
+    FText::FromString(TEXT("Importing Skybox...")),
+    SNotificationItem::CS_Pending
+    );
+
+  SkyboxApi->Imagine()->GetRequests(
+    SkyboxImagineId,
+    [this](FImagineGetExportsResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+    {
+      if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+      {
+        ShowMessage(
+          ImportNotification,
+          ImportSkyboxNotificationTitle,
+          FText::FromString(TEXT("Failed importing Skybox, See Message Log")),
+          SNotificationItem::CS_Fail
+          );
+      }
+      else if (Response->request.status == TEXT("error"))
+      {
+        ShowMessage(
+          ImportNotification,
+          ImportSkyboxNotificationTitle,
+          FText::FromString(FString::Printf(TEXT("Import failed: %s"), *Response->request.error_message)),
+          SNotificationItem::CS_Fail
+          );
+      }
+      else
+      {
+        PromptTextBox->SetText(FText::FromString(Response->request.prompt));
+        NegativeTextTextBox->SetText(FText::FromString(Response->request.negative_text));
+        CategoryListView->ClearSelection();
+
+        const int StyleIdx = Response->request.skybox_style_id;
+        if (CategoryListView.IsValid() && StyleIdx != INDEX_NONE)
+        {
+          for (TSharedPtr<FText> Category : FilteredCategories)
+          {
+            FSkyboxListEntry CurrentCategory = Categories[StyleIdx];
+            if (Category->ToString().Equals(CurrentCategory.Name)) CategoryListView->SetSelection(Category);
+          }
+        }
+
+        ShowMessage(
+          ImportNotification,
+          ImportSkyboxNotificationTitle,
+          FText::FromString(TEXT("Finished importing")),
+          SNotificationItem::CS_Success
+          );
+      }
+
+      SetButtonsEnabled(true);
+    }
+    );
+}
+
+FReply SSkyboxAiWidget::OnRemixClicked()
+{
+  if (!ValidateGenerateData()) return FReply::Handled();
+
+  SetButtonsEnabled(false);
+  TSharedRef<SWindow> DialogWindow =
+    SNew(SWindow).Title(SSkyboxAiWidget::RemixSkyboxNotificationTitle)
+                 .ClientSize(FVector2D(350, 100))
+                 .SupportsMinimize(false)
+                 .SupportsMaximize(false)
+                 .SizingRule(ESizingRule::FixedSize)
+                 .IsTopmostWindow(true);
+
+  TSharedPtr<SInputDialogWidget> InputDialog =
+    SNew(SInputDialogWidget).ParentWindow(DialogWindow)
+                            .DialogTitle(FText::FromString(TEXT("Enter Skybox ID")))
+                            .OnConfirm_Lambda([this](const uint32 Id) { ExecuteRemix(Id); })
+                            .OnCancel_Lambda([this]() { SetButtonsEnabled(true); });
+
+  DialogWindow->SetContent(InputDialog.ToSharedRef());
+  DialogWindow->SetOnWindowClosed(
+    FOnWindowClosed::CreateLambda([this](const TSharedRef<SWindow> &Window) { SetButtonsEnabled(true); })
+    );
+
+  FSlateApplication::Get().AddWindow(DialogWindow);
+
+  return FReply::Handled();
+}
+
+void SSkyboxAiWidget::ExecuteRemix(const uint32 SkyboxImagineId)
+{
+  SetButtonsEnabled(false);
+  ShowMessage(
+    GenerateSkyboxNotification,
+    GenerateSkyboxNotificationTitle,
+    FText::FromString(TEXT("Starting Skybox Generation...")),
+    SNotificationItem::CS_Pending
+    );
+
+  FSkyboxGenerateRequest Request = GetGenerateRequest();
+  Request.remix_imagine_id = SkyboxImagineId;
+
+  ExecuteGenerate(Request);
 }
 
 FReply SSkyboxAiWidget::OnRefreshLists()
@@ -864,8 +1026,7 @@ FReply SSkyboxAiWidget::OnRefreshLists()
 
 void SSkyboxAiWidget::ExecuteRefreshListAsync()
 {
-  if (RefreshListsButton.IsValid()) RefreshListsButton->SetEnabled(false);
-
+  SetButtonsEnabled(false);
   ShowMessage(
     RefreshListsNotification,
     RefreshListsNotificationTitle,
@@ -896,7 +1057,7 @@ void SSkyboxAiWidget::ExecuteRefreshListAsync()
           bOk ? SNotificationItem::CS_Success : SNotificationItem::CS_Fail
           );
 
-        if (RefreshListsButton.IsValid()) RefreshListsButton->SetEnabled(true);
+        SetButtonsEnabled(true);
         if (PromptLabel.IsValid())
         {
           UpdateTextCharacterCount(
@@ -938,6 +1099,14 @@ void SSkyboxAiWidget::ExecuteRefreshListAsync()
       OnApiCallComplete(false);
     }
     );
+}
+
+void SSkyboxAiWidget::SetButtonsEnabled(const bool bEnabled) const
+{
+  if (RefreshListsButton.IsValid()) RefreshListsButton->SetEnabled(bEnabled);
+  if (GenerateButton.IsValid()) GenerateButton->SetEnabled(bEnabled);
+  if (RemixButton.IsValid()) RemixButton->SetEnabled(bEnabled);
+  if (ImportButton.IsValid()) ImportButton->SetEnabled(bEnabled);
 }
 
 void SSkyboxAiWidget::UpdateTextCharacterCount(
@@ -988,7 +1157,6 @@ void SSkyboxAiWidget::ShowMessage(
     Info.FadeOutDuration = 1.0f;
     Info.ExpireDuration = 5.0f;
     Info.bUseThrobber = true;
-    Info.ForWindow = FSlateApplication::Get().GetActiveTopLevelWindow();
     Info.Hyperlink = FSimpleDelegate::CreateLambda(InvokeMessageLog);
     Info.HyperlinkText = FText::FromString(TEXT("View Message Log"));
 

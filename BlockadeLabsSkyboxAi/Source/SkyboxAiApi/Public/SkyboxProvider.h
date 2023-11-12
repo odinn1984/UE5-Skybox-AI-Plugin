@@ -132,6 +132,9 @@ struct FSkyboxGenerateRequest
 
   UPROPERTY()
   int skybox_style_id = INDEX_NONE;
+
+  UPROPERTY()
+  int remix_imagine_id = INDEX_NONE;
 };
 
 UCLASS()

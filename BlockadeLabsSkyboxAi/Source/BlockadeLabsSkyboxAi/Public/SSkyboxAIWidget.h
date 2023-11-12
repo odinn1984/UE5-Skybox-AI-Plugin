@@ -59,6 +59,9 @@ public:
 
   inline static const FText RefreshListsNotificationTitle = FText::FromString(TEXT("Refresh Lists"));
   inline static const FText GenerateSkyboxNotificationTitle = FText::FromString(TEXT("Generate Skybox"));
+  inline static const FText RemixSkyboxNotificationTitle = FText::FromString(TEXT("Remix Skybox"));
+  inline static const FText ImportSkyboxNotificationTitle = FText::FromString(TEXT("Import Skybox"));
+  inline static const FText FailedValidationTitle = FText::FromString(TEXT("Failed Validating Generate Data"));
 
   void Construct(const FArguments &InArgs);
 
@@ -74,9 +77,12 @@ private:
   TWeakObjectPtr<UBlockadeLabsSkyboxAiSettings> PluginSettings;
   TSharedPtr<SNotificationItem> RefreshListsNotification;
   TSharedPtr<SNotificationItem> GenerateSkyboxNotification;
+  TSharedPtr<SNotificationItem> ImportNotification;
 
   TSharedPtr<SButton> GenerateButton;
+  TSharedPtr<SButton> RemixButton;
   TSharedPtr<SButton> RefreshListsButton;
+  TSharedPtr<SButton> ImportButton;
   TSharedPtr<SCheckBox> EnhancePromptCheckbox;
   TSharedPtr<SMultiLineEditableTextBox> PromptTextBox;
   TSharedPtr<SMultiLineEditableTextBox> NegativeTextTextBox;
@@ -135,12 +141,19 @@ private:
 
   FReply OnGenerateClicked();
   bool ValidateGenerateData() const;
+  FSkyboxGenerateRequest GetGenerateRequest() const;
+  void ExecuteGenerate(FSkyboxGenerateRequest &Request);
   void StartPollingGenerationStatus(const FString &SkyboxId);
   void PollGenerationStatus(const FString &SkyboxId);
   void StartPollingExportStatus(const FString &SkyboxId);
   void PollExportStatus(const FString &SkyboxId);
+  FReply OnImportClicked();
+  void ExecuteImport(const uint32 SkyboxImagineId);
+  FReply OnRemixClicked();
+  void ExecuteRemix(const uint32 SkyboxImagineId);
   FReply OnRefreshLists();
   void ExecuteRefreshListAsync();
+  void SetButtonsEnabled(const bool bEnabled) const;
 
   void UpdateTextCharacterCount(
     const FString &LabelTitle,
