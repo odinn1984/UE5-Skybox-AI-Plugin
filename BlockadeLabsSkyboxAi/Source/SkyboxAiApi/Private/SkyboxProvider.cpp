@@ -82,7 +82,7 @@ void USkyboxProvider::GetStyles(FGetStylesCallback Callback) const
         for (FSkyboxStyle &Item : Response)
         {
           if (!ShouldShowPremiumContent() && Item.premium == 1) continue;
-          Styles.Add(Item.id, FSkyboxListEntry(Item.name, Item.max_char, Item.negative_text_max_char));
+          Styles.Add(Item.id, FSkyboxListEntry(Item.name, Item.image, Item.max_char, Item.negative_text_max_char));
         }
       }
 

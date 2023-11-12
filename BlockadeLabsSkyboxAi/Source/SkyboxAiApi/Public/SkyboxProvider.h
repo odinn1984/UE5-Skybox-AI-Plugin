@@ -12,6 +12,7 @@ struct FSkyboxExportResponse;
 struct FSkyboxListEntry
 {
   FString Name;
+  FString ImageUrl;
   int PromptMaxLen;
   int NegativeTextMaxLen;
 
@@ -66,6 +67,9 @@ struct FSkyboxStyle
 
   UPROPERTY()
   int negative_text_max_char = 0;
+
+  UPROPERTY()
+  FString image = TEXT("");
 };
 
 USTRUCT()

@@ -419,7 +419,7 @@ void SSkyboxAiWidget::OnCategorySelected(TSharedPtr<FText> InItem, ESelectInfo::
   }
   else
   {
-    const auto [Name, PromptMaxLen, NegativeTextMaxLen] = Categories[FinalId];
+    const auto [Name, ImageUrl, PromptMaxLen, NegativeTextMaxLen] = Categories[FinalId];
     WidgetData.Category = std::make_tuple(FinalId, NewValue, PromptMaxLen, NegativeTextMaxLen);
   }
 
