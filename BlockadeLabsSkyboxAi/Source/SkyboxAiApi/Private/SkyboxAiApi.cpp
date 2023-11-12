@@ -5,6 +5,7 @@
 #include "HttpModule.h"
 #include "SKyboxAiHttpClient.h"
 #include "Interfaces/IHttpResponse.h"
+#include "Misc/FileHelper.h"
 
 DEFINE_LOG_CATEGORY(SkyboxAiApi);
 

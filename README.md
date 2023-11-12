@@ -2,6 +2,8 @@
 
 This is a tool that integrates with [SkyboxAI](https://skybox.blockadelabs.com/) by [Blockade Labs](https://www.blockadelabs.com/)
 
+**This is not an official plugin made by Blockade Labs, it's a community plugin**. To see official SDK's and Libraries please visit [Blockade Labs API Documentation](https://api-documentation.blockadelabs.com/api/sdk.html)
+
 The purpose of this plugin is to allow you to request to generate a sky box and then automatically download it and put it in your project with an option to disable features that are premium (to reduce UI clutter and show only things that you can use)
 
 If you are looking for information about the implementation of the API that is used in this plugin please visit the [API docs](./BlockadeLabsSkyboxAi/Source/SkyboxAiApi/README.md)
@@ -14,6 +16,7 @@ If you are interested in knowing more about Blockade Labs and Skybox AI please t
   - [Table Of Content](#table-of-content)
   - [Requirements](#requirements)
   - [Important Notes](#important-notes)
+  - [Supported Platforms](#supported-platforms)
   - [Setting Up The Plugin](#setting-up-the-plugin)
     - [Plugin Settings](#plugin-settings)
   - [Using The Plugin](#using-the-plugin)
@@ -30,18 +33,7 @@ If you are interested in knowing more about Blockade Labs and Skybox AI please t
 
 For this plugin to work you will need to have a SkyboxAI account and an API key, please visit [SkyboxAI API Membership](https://skybox.blockadelabs.com/api-membership) page to see their pricing and create an account
 
-This plugin was tested on the following versions of Unreal Engine:
-
-- [ ] 5.0
-- [ ] 5.1
-- [ ] 5.2
-- [x] 5.3
-
-This plugin was tested on the following platforms:
-
-- [x] Windows
-- [ ] Linux
-- [ ] OSX
+You might need to install a specific .NET runtime depending on your UE version
 
 ## Important Notes
 
@@ -50,6 +42,15 @@ When using this plugin it introduces new editor level settings where you put you
 Since this file contains **SENSITIVE INFORMATION** please make sure to **NEVER** submit it anywhere (like GitHub, etc...)
 
 There are many solutions for secret management, please use one of them if you want to use this plugin as part of some automatic process
+
+## Supported Platforms
+
+| Engine Version | Windows | Linux | OSX |
+| -------------- | ------- | ----- | --- |
+| **5.0**        | YES     | NO    | NO  |
+| **5.1**        | NO      | NO    | NO  |
+| **5.2**        | NO      | NO    | NO  |
+| **5.3**        | YES     | NO    | NO  |
 
 ## Setting Up The Plugin
 
@@ -155,6 +156,7 @@ This plugin is currently missing a few features that are available on SkyboxAI, 
 - [ ] Download depth map [On the TODO list]
 - [ ] 3D features
 - [ ] Control image
+- [ ] Preview
 
 Support for Pusher / Webhooks will not be implemented
 

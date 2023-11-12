@@ -1,5 +1,7 @@
 ﻿#include "InputDialogWidget.h"
 
+#include "CustomMessageDialog.h"
+
 DEFINE_LOG_CATEGORY(InputDialogWidget);
 
 void SInputDialogWidget::Construct(const FArguments &InArgs)
@@ -34,7 +36,7 @@ void SInputDialogWidget::Construct(const FArguments &InArgs)
                        {
                          if (!IsInputValid())
                          {
-                           FMessageDialog::Open(
+                           FCustomMessageDialog::Open(
                              EAppMsgCategory::Error,
                              EAppMsgType::Ok,
                              FText::FromString(TEXT("ID must be >= 0")),

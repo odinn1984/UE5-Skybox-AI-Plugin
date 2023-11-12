@@ -30,10 +30,26 @@ struct FSkyboxAiWidgetData
 {
   bool bEnrichPrompt = false;
 
-  FText Prompt;
-  FText NegativeText;
+  FText Prompt = FText::FromString(TEXT(""));
+  FText NegativeText = FText::FromString(TEXT(""));
   FSkyboxAiStylesTuple Category;
   FSkyboxAiExportTypesTuple ExportType;
+
+  FSkyboxAiWidgetData() {}
+
+  FSkyboxAiWidgetData(
+    bool bEnrichPrompt,
+    const FText &Prompt,
+    const FText &NegativeText,
+    const FSkyboxAiStylesTuple &Category,
+    const FSkyboxAiExportTypesTuple &ExportType)
+    : bEnrichPrompt(bEnrichPrompt),
+      Prompt(Prompt),
+      NegativeText(NegativeText),
+      Category(Category),
+      ExportType(ExportType)
+  {
+  }
 };
 
 class SSkyboxAiWidget : public SCompoundWidget

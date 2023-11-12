@@ -2,7 +2,6 @@
 #include "BlockadeLabsSkyboxAiSettings.h"
 #include "HttpModule.h"
 #include "SkyboxAiApi.h"
-#include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 
 DEFINE_LOG_CATEGORY(SkyboxAiHttpClient);

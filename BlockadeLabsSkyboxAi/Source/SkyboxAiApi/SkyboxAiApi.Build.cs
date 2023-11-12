@@ -43,15 +43,37 @@ public class SkyboxAiApi : ModuleRules
 				"ToolMenus",
 				"CoreUObject",
 				"Engine",
-				"Http",
 				"Json",
 				"JsonUtilities",
 				"DeveloperSettings",
-				"MessageLog",
+				"MessageLog"
 				// ... add private dependencies that you statically link with here ...
 			}
 		);
 
+		BuildVersion Version;
+
+		if (BuildVersion.TryRead(BuildVersion.GetDefaultFileName(), out Version))
+		{
+			if (Version.MajorVersion == 5 && Version.MinorVersion == 0)
+			{
+				PrivateDependencyModuleNames.AddRange(
+					new string[]
+					{
+						"HTTP"
+					}
+				);
+			}
+			else if (Version.MajorVersion == 5 && Version.MinorVersion >= 2)
+			{
+				PrivateDependencyModuleNames.AddRange(
+					new string[]
+					{
+						"Http"
+					}
+				);
+			}
+		}
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

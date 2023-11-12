@@ -1,11 +1,13 @@
 ﻿#include "SSkyboxAiWidget.h"
 #include "BlockadeLabsSkyboxAiSettings.h"
+#include "CustomMessageDialog.h"
 #include "ImagineProvider.h"
 #include "InputDialogWidget.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "SkyboxAiApi.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
 #include "Widgets/Input/SSearchBox.h"
+#include "Async/Async.h"
 
 DEFINE_LOG_CATEGORY(SkyboxAiWidget);
 
@@ -580,7 +582,7 @@ bool SSkyboxAiWidget::ValidateGenerateData() const
 
   if (!bSuccess)
   {
-    FMessageDialog::Open(
+    FCustomMessageDialog::Open(
       EAppMsgCategory::Error,
       EAppMsgType::Ok,
       FText::FromString(FString::Join(ErrorMessage, TEXT("\r\n"))),
@@ -982,7 +984,7 @@ FReply SSkyboxAiWidget::OnRefreshLists()
 {
   if (!bStartingUp)
   {
-    auto Answer = FMessageDialog::Open(
+    const auto Answer = FCustomMessageDialog::Open(
       EAppMsgCategory::Error,
       EAppMsgType::OkCancel,
       FText::FromString(TEXT("Refreshing lists will revert to default selection, are you sure?")),

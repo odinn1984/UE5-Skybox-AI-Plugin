@@ -16,6 +16,16 @@ struct FSkyboxListEntry
   int PromptMaxLen;
   int NegativeTextMaxLen;
 
+  FSkyboxListEntry(FString InName)
+    : Name(InName), ImageUrl(TEXT("")), PromptMaxLen(0), NegativeTextMaxLen(0)
+  {
+  }
+
+  FSkyboxListEntry(FString InName, FString InImageUrl, int InPromptMaxLen, int InNegativeTextMaxLen)
+    : Name(InName), ImageUrl(InImageUrl), PromptMaxLen(InPromptMaxLen), NegativeTextMaxLen(InNegativeTextMaxLen)
+  {
+  }
+
   bool operator==(const FSkyboxListEntry &Other) const
   {
     return Name.Equals(Other.Name);
