@@ -1127,7 +1127,7 @@ void SSkyboxAiWidget::UpdateTextCharacterCount(
     FSlateColor(FLinearColor(1.0f, 0.0f, 0.0f)) :
     FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f));
 
-  NegativeTextTextBox->SetForegroundColor(Color);
+  InPromptTextBox->SetForegroundColor(Color);
 }
 
 void SSkyboxAiWidget::ShowMessage(
