@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 0
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION <= 1
 
 enum class EAppMsgCategory : uint8
 {
@@ -14,7 +14,7 @@ enum class EAppMsgCategory : uint8
 
 struct FCustomMessageDialog : FMessageDialog
 {
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 0
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION <= 1
 
   static EAppReturnType::Type Open(
     EAppMsgCategory MessageCategory,

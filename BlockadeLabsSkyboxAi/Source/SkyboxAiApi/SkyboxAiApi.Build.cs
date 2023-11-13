@@ -55,7 +55,7 @@ public class SkyboxAiApi : ModuleRules
 
 		if (BuildVersion.TryRead(BuildVersion.GetDefaultFileName(), out Version))
 		{
-			if (Version.MajorVersion == 5 && Version.MinorVersion == 0)
+			if (Version.MajorVersion == 5 && Version.MinorVersion <= 1)
 			{
 				PrivateDependencyModuleNames.AddRange(
 					new string[]

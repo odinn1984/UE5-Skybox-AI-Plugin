@@ -48,7 +48,7 @@ There are many solutions for secret management, please use one of them if you wa
 | Engine Version | Windows | Linux | OSX |
 | -------------- | ------- | ----- | --- |
 | **5.0**        | YES     | NO    | NO  |
-| **5.1**        | NO      | NO    | NO  |
+| **5.1**        | YES     | NO    | NO  |
 | **5.2**        | NO      | NO    | NO  |
 | **5.3**        | YES     | NO    | NO  |
 
