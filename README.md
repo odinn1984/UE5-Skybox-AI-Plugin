@@ -49,7 +49,7 @@ There are many solutions for secret management, please use one of them if you wa
 | -------------- | ------- | ----- | --- |
 | **5.0**        | YES     | NO    | NO  |
 | **5.1**        | YES     | NO    | NO  |
-| **5.2**        | NO      | NO    | NO  |
+| **5.2**        | YES     | NO    | NO  |
 | **5.3**        | YES     | NO    | NO  |
 
 ## Setting Up The Plugin
