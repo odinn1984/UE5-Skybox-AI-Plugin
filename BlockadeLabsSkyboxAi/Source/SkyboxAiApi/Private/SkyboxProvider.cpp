@@ -120,14 +120,22 @@ void USkyboxProvider::GetExport(const FString Id, FGetExportCallback Callback) c
 {
   if (!IsClientValid()) return;
 
+  FSkyboxExportResponse Response;
+
+  if (Id.IsEmpty())
+  {
+    Response.status = TEXT("failed");
+    Response.error_message = TEXT("Invalid ID provided");
+
+    return Callback(&Response, 422, true);
+  }
+
   ApiClient->MakeAPIRequest(
     TEXT("/skybox/export/" + Id),
     FSkyboxAiHttpHeaders(),
     TEXT(""),
-    [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
+    [this, Callback, &Response](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
     {
-      FSkyboxExportResponse Response;
-
       if (!ApiClient->DeserializeJsonToUStruct<FSkyboxExportResponse>(Body, &Response))
       {
         Callback(nullptr, StatusCode, bConnectedSuccessfully);

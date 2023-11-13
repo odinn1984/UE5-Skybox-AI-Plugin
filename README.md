@@ -45,12 +45,12 @@ There are many solutions for secret management, please use one of them if you wa
 
 ## Supported Platforms
 
-| Engine Version | Windows | Linux | OSX |
-| -------------- | ------- | ----- | --- |
-| **5.0**        | YES     | NO    | NO  |
-| **5.1**        | YES     | NO    | NO  |
-| **5.2**        | YES     | NO    | NO  |
-| **5.3**        | YES     | NO    | NO  |
+| **Engine Version** | **Windows** | **Linux** | **OSX** |
+| ------------------ | ----------- | --------- | ------- |
+| **5.0**            | ✔️           | ❌         | ❌       |
+| **5.1**            | ✔️           | ❌         | ❌       |
+| **5.2**            | ✔️           | ❌         | ❌       |
+| **5.3**            | ✔️           | ❌         | ❌       |
 
 ## Setting Up The Plugin
 
@@ -139,7 +139,7 @@ Please make sure to follow the following rules when writing code for this reposi
 
 1. Please use the format defined in `.clang-format` (These are a bit different spacing wise and line-break wise than what UE has in their code, personal preference)
 2. Please make sure to follow the naming conventions in [unreal docs](https://docs.unrealengine.com/5.3/en-US/epic-cplusplus-coding-standard-for-unreal-engine/)
-3. If you are adding functionality or modifying something please make sure to either add new tests or make sure that the current ones cover the changed functionality
+3. If you are adding functionality or modifying something please consider adding tests as well where possible, this will help us make sure that we don't break anything in the future
 4. Try to not go overboard with testing every single line of code, code coverage is less important than functionality and user flow coverage
 5. Please make sure that the change is running on all supported engine versions
    1. Hopefully I will add automation around that so that we can have a testing matrix, but until then we have to make sure we don't break any engine version

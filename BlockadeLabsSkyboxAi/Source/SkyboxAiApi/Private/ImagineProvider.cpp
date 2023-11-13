@@ -35,13 +35,22 @@ void UImagineProvider::GetRequestsObfuscatedId(const FString Id, FGetRequestsObf
 {
   if (!IsClientValid()) return;
 
+  FImagineGetExportsResponse Response;
+
+  if (Id.IsEmpty())
+  {
+    Response.request.status = TEXT("failed");
+    Response.request.error_message = TEXT("Invalid ID provided");
+
+    return Callback(&Response, 422, true);
+  }
+
   ApiClient->MakeAPIRequest(
     TEXT("/imagine/requests/obfuscated-id/" + Id),
     FSkyboxAiHttpHeaders(),
     TEXT(""),
-    [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
+    [this, Callback, &Response](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
     {
-      FImagineGetExportsResponse Response;
       ApiClient->DeserializeJsonToUStruct<FImagineGetExportsResponse>(Body, &Response);
       Callback(&Response, StatusCode, bConnectedSuccessfully);
     }
