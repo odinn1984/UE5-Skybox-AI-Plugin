@@ -37,8 +37,6 @@ void USkyboxProvider::Post(const FSkyboxGenerateRequest &Data, FPostCallback Cal
     return;
   }
 
-  UE_LOG(LogTemp, Warning, TEXT("SanitizedBody: %s"), *SanitizedBody);
-
   FSkyboxAiHttpHeaders Headers = FSkyboxAiHttpHeaders();
   Headers.Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GPost;
 
