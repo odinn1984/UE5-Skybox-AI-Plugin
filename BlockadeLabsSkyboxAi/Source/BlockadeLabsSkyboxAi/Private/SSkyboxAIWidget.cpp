@@ -13,7 +13,7 @@ DEFINE_LOG_CATEGORY(SkyboxAiWidget);
 
 void SSkyboxAiWidget::Construct(const FArguments &InArgs)
 {
-  if (!SkyboxApi.IsValid()) SkyboxApi = NewObject<USkyboxApi>();
+  if (!SkyboxApi.IsValid()) SkyboxApi = NewObject<USkyboxAiApi>();
 
   if (!PluginSettings.IsValid())
   {
@@ -674,7 +674,7 @@ void SSkyboxAiWidget::PollGenerationStatus(const FString &SkyboxId)
 {
   SkyboxApi->Imagine()->GetRequestsObfuscatedId(
     SkyboxId,
-    [this, SkyboxId](FImagineGetExportsResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+    [this, SkyboxId](FImagineGetExportsResponseRequest *Response, int StatusCode, bool bConnectedSuccessfully)
     {
       bool bStopPolling = false;
       bool bSuccess = true;
@@ -687,13 +687,13 @@ void SSkyboxAiWidget::PollGenerationStatus(const FString &SkyboxId)
         ErrorMsg = TEXT("Failed generating Skybox, See Message Log");
       }
 
-      const FString Status = Response == nullptr ? TEXT("") : Response->request.status;
+      const FString Status = Response == nullptr ? TEXT("") : Response->status;
 
       if (bSuccess && Status == TEXT("error"))
       {
         bStopPolling = true;
         bSuccess = false;
-        ErrorMsg = FString::Printf(TEXT("Generation failed: %s %s"), *SkyboxId, *Response->request.error_message);
+        ErrorMsg = FString::Printf(TEXT("Generation failed: %s %s"), *SkyboxId, *Response->error_message);
       }
 
       if (bSuccess && Status == TEXT("abort"))
@@ -803,7 +803,7 @@ void SSkyboxAiWidget::StartPollingExportStatus(const FString &SkyboxId)
 
 void SSkyboxAiWidget::PollExportStatus(const FString &SkyboxId)
 {
-  SkyboxApi->Skybox()->GetExport(
+  SkyboxApi->Skybox()->GetExportById(
     SkyboxId,
     [this, SkyboxId](FSkyboxExportResponse *Response, int StatusCode, bool bConnectedSuccessfully)
     {
@@ -905,7 +905,7 @@ void SSkyboxAiWidget::ExecuteImport(const uint32 SkyboxImagineId)
 
   SkyboxApi->Imagine()->GetRequests(
     SkyboxImagineId,
-    [this](FImagineGetExportsResponse *Response, int StatusCode, bool bConnectedSuccessfully)
+    [this](FImagineGetExportsResponseRequest *Response, int StatusCode, bool bConnectedSuccessfully)
     {
       if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
       {
@@ -916,22 +916,22 @@ void SSkyboxAiWidget::ExecuteImport(const uint32 SkyboxImagineId)
           SNotificationItem::CS_Fail
           );
       }
-      else if (Response->request.status == TEXT("error"))
+      else if (Response->status == TEXT("error"))
       {
         ShowMessage(
           ImportNotification,
           ImportSkyboxNotificationTitle,
-          FText::FromString(FString::Printf(TEXT("Import failed: %s"), *Response->request.error_message)),
+          FText::FromString(FString::Printf(TEXT("Import failed: %s"), *Response->error_message)),
           SNotificationItem::CS_Fail
           );
       }
       else
       {
-        PromptTextBox->SetText(FText::FromString(Response->request.prompt));
-        NegativeTextTextBox->SetText(FText::FromString(Response->request.negative_text));
+        PromptTextBox->SetText(FText::FromString(Response->prompt));
+        NegativeTextTextBox->SetText(FText::FromString(Response->negative_text));
         CategoryListView->ClearSelection();
 
-        const int StyleIdx = Response->request.skybox_style_id;
+        const int StyleIdx = Response->skybox_style_id;
         if (CategoryListView.IsValid() && StyleIdx != INDEX_NONE)
         {
           for (TSharedPtr<FText> Category : FilteredCategories)
@@ -1085,7 +1085,7 @@ void SSkyboxAiWidget::ExecuteRefreshList()
     }
     );
 
-  SkyboxApi.Get()->Skybox()->GetExports(
+  SkyboxApi.Get()->Skybox()->GetExport(
     [this, OnApiCallComplete](FSkyboxAiExportTypes &Types, int StatusCode, bool bConnectedSuccessfully)
     {
       if (StatusCode >= 300 || !bConnectedSuccessfully) return OnApiCallComplete(true);

@@ -3,69 +3,69 @@
 
 UImagineProvider::UImagineProvider()
 {
-  SetClient(CreateDefaultSubobject<USKyboxAiHttpClient>("APIClient"));
+	SetClient(CreateDefaultSubobject<USKyboxAiHttpClient>("APIClient"));
 }
 
-void UImagineProvider::SetClient(USKyboxAiHttpClient *InAPIClient)
+void UImagineProvider::SetClient(USKyboxAiHttpClient* InAPIClient)
 {
-  ApiClient = InAPIClient;
+	ApiClient = InAPIClient;
 
-  // ReSharper disable once CppExpressionWithoutSideEffects
-  IsClientValid();
+	// ReSharper disable once CppExpressionWithoutSideEffects
+	IsClientValid();
 }
 
 void UImagineProvider::GetRequests(const uint32 Id, FGetRequestsObfuscatedIdCallback Callback) const
 {
-  if (!IsClientValid()) return;
+	if (!IsClientValid()) return;
 
-  ApiClient->MakeAPIRequest(
-    TEXT("/imagine/requests/" + FString::FromInt(Id)),
-    FSkyboxAiHttpHeaders(),
-    TEXT(""),
-    [this, Callback](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
-    {
-      FImagineGetExportsResponse Response;
-      ApiClient->DeserializeJsonToUStruct<FImagineGetExportsResponse>(Body, &Response);
-      Callback(&Response, StatusCode, bConnectedSuccessfully);
-    }
-    );
+	ApiClient->MakeAPIRequest(
+		TEXT("/imagine/requests/" + FString::FromInt(Id)),
+		FSkyboxAiHttpHeaders(),
+		TEXT(""),
+		[this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
+		{
+			FImagineGetExportsResponse Response;
+			ApiClient->DeserializeJsonToUStruct<FImagineGetExportsResponse>(Body, &Response);
+			Callback(&Response.request, StatusCode, bConnectedSuccessfully);
+		}
+	);
 }
 
 void UImagineProvider::GetRequestsObfuscatedId(const FString Id, FGetRequestsObfuscatedIdCallback Callback) const
 {
-  if (!IsClientValid()) return;
+	if (!IsClientValid()) return;
 
-  FImagineGetExportsResponse Response;
+	if (Id.IsEmpty())
+	{
+		FImagineGetExportsResponse Response;
+		Response.request.status = TEXT("failed");
+		Response.request.error_message = TEXT("Invalid ID provided");
 
-  if (Id.IsEmpty())
-  {
-    Response.request.status = TEXT("failed");
-    Response.request.error_message = TEXT("Invalid ID provided");
+		return Callback(&Response.request, 404, true);
+	}
 
-    return Callback(&Response, 422, true);
-  }
-
-  ApiClient->MakeAPIRequest(
-    TEXT("/imagine/requests/obfuscated-id/" + Id),
-    FSkyboxAiHttpHeaders(),
-    TEXT(""),
-    [this, Callback, &Response](const FString &Body, int StatusCode, bool bConnectedSuccessfully)
-    {
-      ApiClient->DeserializeJsonToUStruct<FImagineGetExportsResponse>(Body, &Response);
-      Callback(&Response, StatusCode, bConnectedSuccessfully);
-    }
-    );
+	ApiClient->MakeAPIRequest(
+		TEXT("/imagine/requests/obfuscated-id/" + Id),
+		FSkyboxAiHttpHeaders(),
+		TEXT(""),
+		[this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
+		{
+			FImagineGetExportsResponse Response;
+			ApiClient->DeserializeJsonToUStruct<FImagineGetExportsResponse>(Body, &Response);
+			Callback(&Response.request, StatusCode, bConnectedSuccessfully);
+		}
+	);
 }
 
 bool UImagineProvider::IsClientValid() const
 {
-  if (ApiClient == nullptr)
-  {
-    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
-      FText::FromString(TEXT("Client wasn't initialized"))
-      );
-    return false;
-  }
+	if (ApiClient == nullptr)
+	{
+		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
+			FText::FromString(TEXT("Client wasn't initialized"))
+		);
+		return false;
+	}
 
-  return true;
+	return true;
 }

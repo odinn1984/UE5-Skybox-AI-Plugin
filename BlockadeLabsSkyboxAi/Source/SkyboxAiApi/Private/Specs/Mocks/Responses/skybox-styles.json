@@ -1,0 +1,42 @@
+﻿[
+  {
+    "id": 5,
+    "name": "Digital Painting",
+    "max-char": 383,
+    "negative-text-max-char": 260,
+    "image": null,
+    "sort_order": 1,
+    "premium": 0,
+    "new": 0,
+    "skybox_style_families": [
+      {
+        "id": 1,
+        "name": "Family name 1"
+      },
+      {
+        "id": 2,
+        "name": "Family name 2"
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "name": "Epic Digital Painting",
+    "max-char": 305,
+    "negative-text-max-char": 120,
+    "image": null,
+    "sort_order": 2,
+    "premium": 1,
+    "new": 1,
+    "skybox_style_families": [
+      {
+        "id": 3,
+        "name": "Family name 3"
+      },
+      {
+        "id": 4,
+        "name": "Family name 4"
+      }
+    ]
+  }
+]

@@ -63,9 +63,8 @@ class SKYBOXAIAPI_API USKyboxAiHttpClient : public UObject
 public:
   USKyboxAiHttpClient();
 
-  void SetHttpModule(FHttpModule *InHttp);
-
-  void MakeAPIRequest(
+  virtual void SetHttpModule(FHttpModule *InHttp);
+  virtual void MakeAPIRequest(
     const FString &Endpoint,
     const FSkyboxAiHttpHeaders &Headers,
     const FString &Body,

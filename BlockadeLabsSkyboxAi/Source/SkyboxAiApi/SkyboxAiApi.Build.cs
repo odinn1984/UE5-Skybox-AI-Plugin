@@ -46,7 +46,8 @@ public class SkyboxAiApi : ModuleRules
 				"Json",
 				"JsonUtilities",
 				"DeveloperSettings",
-				"MessageLog"
+				"MessageLog",
+				"AutomationDriver"
 				// ... add private dependencies that you statically link with here ...
 			}
 		);

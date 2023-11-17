@@ -17,7 +17,7 @@ typedef std::tuple<int, FString> FSkyboxAiExportTypesTuple;
 #define TUPLE_PROMPT_MAX_LEN_IDX 2
 #define TUPLE_NEGATIVE_TEXT_MAX_LEN_IDX 3
 
-class USkyboxApi;
+class USkyboxAiApi;
 class SMultiLineEditableTextBox;
 
 struct FSkyboxAiWidgetData;
@@ -91,7 +91,7 @@ private:
   TAtomic<bool> bGeneratePolling = false;
   TAtomic<bool> bExportPolling = false;
 
-  TWeakObjectPtr<USkyboxApi> SkyboxApi;
+  TWeakObjectPtr<USkyboxAiApi> SkyboxApi;
   TWeakObjectPtr<UBlockadeLabsSkyboxAiSettings> PluginSettings;
   TSharedPtr<SNotificationItem> RefreshListsNotification;
   TSharedPtr<SNotificationItem> GenerateSkyboxNotification;

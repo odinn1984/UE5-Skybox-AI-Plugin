@@ -1,0 +1,56 @@
+﻿[
+  {
+    "id": 1,
+    "name": "JPG",
+    "key": "equirectangular-jpg",
+    "premium_feature": false
+  },
+  {
+    "id": 2,
+    "name": "PNG",
+    "key": "equirectangular-png",
+    "premium_feature": false
+  },
+  {
+    "id": 3,
+    "name": "Cube Map",
+    "key": "cube-map-png",
+    "premium_feature": true
+  },
+  {
+    "id": 4,
+    "name": "HDRI HDR",
+    "key": "hdri-hdr",
+    "premium_feature": true
+  },
+  {
+    "id": 5,
+    "name": "HDRI EXR",
+    "key": "hdri-exr",
+    "premium_feature": true
+  },
+  {
+    "id": 6,
+    "name": "Depth Map",
+    "key": "depth-map-png",
+    "premium_feature": true
+  },
+  {
+    "id": 7,
+    "name": "Video Landscape",
+    "key": "video-landscape-mp4",
+    "premium_feature": true
+  },
+  {
+    "id": 8,
+    "name": "Video Portrait",
+    "key": "video-portrait-mp4",
+    "premium_feature": true
+  },
+  {
+    "id": 9,
+    "name": "Video Square",
+    "key": "video-square-mp4",
+    "premium_feature": true
+  }
+]

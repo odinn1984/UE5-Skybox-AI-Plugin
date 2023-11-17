@@ -7,7 +7,7 @@ class USKyboxAiHttpClient;
 
 struct FImagineGetExportsResponse;
 
-typedef TFunction<void(FImagineGetExportsResponse *, int StatusCode, bool bConnectedSuccessfully)> FGetRequestsObfuscatedIdCallback;
+typedef TFunction<void(FImagineGetExportsResponseRequest *, int StatusCode, bool bConnectedSuccessfully)> FGetRequestsObfuscatedIdCallback;
 
 USTRUCT()
 struct FImagineGetExportsResponseRequest
@@ -61,6 +61,8 @@ class SKYBOXAIAPI_API UImagineProvider : public UObject
 
 public:
   explicit UImagineProvider();
+
+	FORCEINLINE USKyboxAiHttpClient *Client() const { return ApiClient; }
 
   void SetClient(USKyboxAiHttpClient *InAPIClient);
 

@@ -159,14 +159,16 @@ class SKYBOXAIAPI_API USkyboxProvider : public UObject
 public:
   explicit USkyboxProvider();
 
+	FORCEINLINE USKyboxAiHttpClient *Client() const { return ApiClient; }
+
   void SetClient(USKyboxAiHttpClient *InAPIClient);
 
   virtual void Post(const FSkyboxGenerateRequest &Data, FPostCallback Callback) const;
 
   virtual void GetStyles(FGetStylesCallback Callback) const;
-  virtual void GetExports(FGetExportsCallback Callback) const;
+  virtual void GetExport(FGetExportsCallback Callback) const;
 
-  virtual void GetExport(const FString Id, FGetExportCallback Callback) const;
+  virtual void GetExportById(const FString Id, FGetExportCallback Callback) const;
   virtual void PostExport(const FSkyboxExportRequest &Data, FPostExportCallback Callback) const;
 
 protected:

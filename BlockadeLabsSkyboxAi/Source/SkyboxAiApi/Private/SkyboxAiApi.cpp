@@ -9,7 +9,7 @@
 
 DEFINE_LOG_CATEGORY(SkyboxAiApi);
 
-USkyboxApi::USkyboxApi()
+USkyboxAiApi::USkyboxAiApi()
 {
   ApiClient = CreateDefaultSubobject<USKyboxAiHttpClient>("APIClient");
 
@@ -20,7 +20,14 @@ USkyboxApi::USkyboxApi()
   ImagineProvider->SetClient(ApiClient);
 }
 
-void USkyboxApi::SaveExportedImage(const FString &ImageUrl, TFunction<void(bool bSuccess)> Callback) const
+void USkyboxAiApi::SetClient(USKyboxAiHttpClient* InAPIClient)
+{
+	ApiClient = InAPIClient;
+	Skybox()->SetClient(ApiClient);
+	Imagine()->SetClient(ApiClient);
+}
+
+void USkyboxAiApi::SaveExportedImage(const FString &ImageUrl, TFunction<void(bool bSuccess)> Callback) const
 {
   if (!IsClientValid()) return;
 
@@ -49,7 +56,7 @@ void USkyboxApi::SaveExportedImage(const FString &ImageUrl, TFunction<void(bool 
     );
 }
 
-bool USkyboxApi::IsClientValid() const
+bool USkyboxAiApi::IsClientValid() const
 {
   if (ApiClient == nullptr)
   {
@@ -62,7 +69,7 @@ bool USkyboxApi::IsClientValid() const
   return true;
 }
 
-void USkyboxApi::DownloadImage(
+void USkyboxAiApi::DownloadImage(
   const FString &ImageUrl,
   TFunction<void(TArray<uint8> ExportedImage, bool bSuccess)> Callback) const
 {

@@ -21,18 +21,18 @@ struct FSkyboxApiError
 };
 
 UCLASS()
-class SKYBOXAIAPI_API USkyboxApi : public UObject, public IModuleInterface
+class SKYBOXAIAPI_API USkyboxAiApi : public UObject
 {
   GENERATED_BODY()
 
 public:
-  explicit USkyboxApi();
+  explicit USkyboxAiApi();
 
+	FORCEINLINE USKyboxAiHttpClient *Client() const { return ApiClient; }
   FORCEINLINE USkyboxProvider *Skybox() const { return SkyboxProvider; }
   FORCEINLINE UImagineProvider *Imagine() const { return ImagineProvider; }
 
-  FORCEINLINE void SetClient(USKyboxAiHttpClient *InAPIClient) { ApiClient = InAPIClient; }
-
+  void SetClient(USKyboxAiHttpClient *InAPIClient);
   void SaveExportedImage(const FString &ImageUrl, TFunction<void(bool bSuccess)> Callback) const;
 
 protected:
