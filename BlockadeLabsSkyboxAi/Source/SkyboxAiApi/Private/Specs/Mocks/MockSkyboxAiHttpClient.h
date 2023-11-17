@@ -7,15 +7,15 @@
 UCLASS()
 class SKYBOXAIAPI_API UMockSkyboxAiHttpClient : public USKyboxAiHttpClient
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 
 public:
-	UMockSkyboxAiHttpClient();
+  UMockSkyboxAiHttpClient();
 
-	virtual void MakeAPIRequest(const FString& Endpoint, const FSkyboxAiHttpHeaders& Headers, const FString& Body, FSkyboxAiHttpCallback Callback) override;
+  virtual void MakeAPIRequest(const FString& Endpoint, const FSkyboxAiHttpHeaders& Headers, const FString& Body, FSkyboxAiHttpCallback Callback) override;
 
 private:
-	FString MockOutPath;
+  FString MockOutPath;
 
-	FString LoadMockResponse(const FString& Filename) const;
+  FString LoadMockResponse(const FString& Filename) const;
 };

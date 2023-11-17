@@ -4,267 +4,257 @@
 
 USkyboxProvider::USkyboxProvider()
 {
-	SetClient(CreateDefaultSubobject<USKyboxAiHttpClient>("APIClient"));
+  SetClient(CreateDefaultSubobject<USKyboxAiHttpClient>("APIClient"));
 }
 
 void USkyboxProvider::SetClient(USKyboxAiHttpClient* InAPIClient)
 {
-	ApiClient = InAPIClient;
+  ApiClient = InAPIClient;
 
-	// ReSharper disable once CppExpressionWithoutSideEffects
-	IsClientValid();
+  // ReSharper disable once CppExpressionWithoutSideEffects
+  IsClientValid();
 }
 
 void USkyboxProvider::Post(const FSkyboxGenerateRequest& Data, FPostCallback Callback) const
 {
-	if (!IsClientValid()) return;
+  if (!IsClientValid()) return;
 
-	const FString Endpoint = TEXT("/skybox");
-	FString SanitizedBody;
+  const FString Endpoint = TEXT("/skybox");
+  FString SanitizedBody;
 
-	if (!RemovePostUnsetFields(Data, &SanitizedBody))
-	{
-		const FString ErrorMessage = TEXT("Invalid request body");
-		constexpr int StatusCode = 422;
+  if (!RemovePostUnsetFields(Data, &SanitizedBody))
+  {
+    const FString ErrorMessage = TEXT("Invalid request body");
+    constexpr int StatusCode = 422;
 
-		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
-			.Message(EMessageSeverity::Error, FText::FromString(TEXT("Post Request Failed")))
-			->AddToken(FTextToken::Create(FText::FromString(Endpoint)))
-			->AddToken(FTextToken::Create(FText::FromString(FString::SanitizeFloat(StatusCode))))
-			->AddToken(FTextToken::Create(FText::FromString(ErrorMessage)));
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
+      .Message(EMessageSeverity::Error, FText::FromString(TEXT("Post Request Failed")))
+      ->AddToken(FTextToken::Create(FText::FromString(Endpoint)))
+      ->AddToken(FTextToken::Create(FText::FromString(FString::SanitizeFloat(StatusCode))))
+      ->AddToken(FTextToken::Create(FText::FromString(ErrorMessage)));
 
-		return Callback(nullptr, StatusCode, true);
-	}
+    return Callback(nullptr, StatusCode, true);
+  }
 
-	FSkyboxAiHttpHeaders Headers = FSkyboxAiHttpHeaders();
-	Headers.Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GPost;
+  FSkyboxAiHttpHeaders Headers = FSkyboxAiHttpHeaders();
+  Headers.Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GPost;
 
-	ApiClient->MakeAPIRequest(
-		Endpoint,
-		Headers,
-		SanitizedBody,
-		[this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
-		{
-			FSkyboxGenerateResponse Response;
+  ApiClient->MakeAPIRequest(
+    Endpoint,
+    Headers,
+    SanitizedBody,
+    [this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
+    {
+      FSkyboxGenerateResponse Response;
 
-			if (!ApiClient->DeserializeJsonToUStruct<FSkyboxGenerateResponse>(Body, &Response))
-			{
-				Callback(nullptr, StatusCode, bConnectedSuccessfully);
-			}
-			else
-			{
-				Callback(&Response, StatusCode, bConnectedSuccessfully);
-			}
-		}
-	);
+      if (!ApiClient->DeserializeJsonToUStruct<FSkyboxGenerateResponse>(Body, &Response))
+      {
+        Callback(nullptr, StatusCode, bConnectedSuccessfully);
+      }
+      else
+      {
+        Callback(&Response, StatusCode, bConnectedSuccessfully);
+      }
+    }
+  );
 }
 
 void USkyboxProvider::GetStyles(FGetStylesCallback Callback) const
 {
-	if (!IsClientValid()) return;
+  if (!IsClientValid()) return;
 
-	ApiClient->MakeAPIRequest(
-		TEXT("/skybox/styles"),
-		FSkyboxAiHttpHeaders(),
-		TEXT(""),
-		[this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
-		{
-			FSkyboxAiStyles Styles;
-			const FString SanitizedBody = GetStylesResponseKeysHyphensToUnderscore(Body);
+  ApiClient->MakeAPIRequest(
+    TEXT("/skybox/styles"),
+    FSkyboxAiHttpHeaders(),
+    TEXT(""),
+    [this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
+    {
+      FSkyboxAiStyles Styles;
+      const FString SanitizedBody = GetStylesResponseKeysHyphensToUnderscore(Body);
 
-			TArray<FSkyboxStyle> Response;
+      TArray<FSkyboxStyle> Response;
 
-			if (ApiClient->DeserializeJsonToUStructArray<FSkyboxStyle>(SanitizedBody, &Response))
-			{
-				for (FSkyboxStyle& Item : Response)
-				{
-					if (!ShouldShowPremiumContent() && Item.premium == 1) continue;
-					Styles.Add(Item.id, FSkyboxListEntry(Item.name, Item.image, Item.max_char, Item.negative_text_max_char));
-				}
-			}
+      if (ApiClient->DeserializeJsonToUStructArray<FSkyboxStyle>(SanitizedBody, &Response))
+      {
+        for (FSkyboxStyle& Item : Response)
+        {
+          if (!ShouldShowPremiumContent() && Item.premium == 1) continue;
+          Styles.Add(Item.id, FSkyboxListEntry(Item.name, Item.image, Item.max_char, Item.negative_text_max_char));
+        }
+      }
 
-			Callback(Styles, StatusCode, bConnectedSuccessfully);
-		}
-	);
+      Callback(Styles, StatusCode, bConnectedSuccessfully);
+    }
+  );
 }
 
 void USkyboxProvider::GetExport(FGetExportsCallback Callback) const
 {
-	if (!IsClientValid()) return;
+  if (!IsClientValid()) return;
 
-	ApiClient->MakeAPIRequest(
-		TEXT("/skybox/export"),
-		FSkyboxAiHttpHeaders(),
-		TEXT(""),
-		[this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
-		{
-			FSkyboxAiExportTypes Types;
-			TArray<FSkyboxExportType> Response;
+  ApiClient->MakeAPIRequest(
+    TEXT("/skybox/export"),
+    FSkyboxAiHttpHeaders(),
+    TEXT(""),
+    [this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
+    {
+      FSkyboxAiExportTypes Types;
+      TArray<FSkyboxExportType> Response;
 
-			if (ApiClient->DeserializeJsonToUStructArray<FSkyboxExportType>(Body, &Response))
-			{
-				for (FSkyboxExportType& Type : Response)
-				{
-					if (!ShouldShowPremiumContent() && Type.premium_feature) continue;
-					Types.Add(Type.id, Type.name);
-				}
-			}
+      if (ApiClient->DeserializeJsonToUStructArray<FSkyboxExportType>(Body, &Response))
+      {
+        for (FSkyboxExportType& Type : Response)
+        {
+          if (!ShouldShowPremiumContent() && Type.premium_feature) continue;
+          Types.Add(Type.id, Type.name);
+        }
+      }
 
-			Callback(Types, StatusCode, bConnectedSuccessfully);
-		}
-	);
+      Callback(Types, StatusCode, bConnectedSuccessfully);
+    }
+  );
 }
 
 void USkyboxProvider::GetExportById(const FString Id, FGetExportCallback Callback) const
 {
-	if (!IsClientValid()) return;
+  if (!IsClientValid()) return;
 
-	FSkyboxExportResponse Response;
+  FSkyboxExportResponse Response;
 
-	if (Id.IsEmpty())
-	{
-		Response.status = TEXT("failed");
-		Response.error_message = TEXT("Invalid ID provided");
+  if (Id.IsEmpty())
+  {
+    Response.status = TEXT("failed");
+    Response.error_message = TEXT("Invalid ID provided");
 
-		return Callback(&Response, 404, true);
-	}
+    return Callback(&Response, 404, true);
+  }
 
-	ApiClient->MakeAPIRequest(
-		TEXT("/skybox/export/" + Id),
-		FSkyboxAiHttpHeaders(),
-		TEXT(""),
-		[this, Callback, &Response](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
-		{
-			if (!ApiClient->DeserializeJsonToUStruct<FSkyboxExportResponse>(Body, &Response))
-			{
-				Callback(nullptr, StatusCode, bConnectedSuccessfully);
-			}
-			else
-			{
-				Callback(&Response, StatusCode, bConnectedSuccessfully);
-			}
-		}
-	);
+  ApiClient->MakeAPIRequest(
+    TEXT("/skybox/export/" + Id),
+    FSkyboxAiHttpHeaders(),
+    TEXT(""),
+    [this, Callback, &Response](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
+    {
+      if (!ApiClient->DeserializeJsonToUStruct<FSkyboxExportResponse>(Body, &Response))
+      {
+        Callback(nullptr, StatusCode, bConnectedSuccessfully);
+      }
+      else
+      {
+        Callback(&Response, StatusCode, bConnectedSuccessfully);
+      }
+    }
+  );
 }
 
 void USkyboxProvider::PostExport(const FSkyboxExportRequest& Data, FPostExportCallback Callback) const
 {
-	if (!IsClientValid()) return;
+  if (!IsClientValid()) return;
 
-	const FString Endpoint = TEXT("/skybox/export");
-	FString BodyPtr;
+  const FString Endpoint = TEXT("/skybox/export");
+  FString BodyPtr;
 
-	if (!ApiClient->SerializeJson<FSkyboxExportRequest>(Data, BodyPtr))
-	{
-		const FString ErrorMessage = TEXT("Invalid request body");
-		constexpr int StatusCode = 422;
+  if (!ApiClient->SerializeJson<FSkyboxExportRequest>(Data, BodyPtr))
+  {
+    const FString ErrorMessage = TEXT("Invalid request body");
+    constexpr int StatusCode = 422;
 
-		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
-			.Message(EMessageSeverity::Error, FText::FromString(TEXT("PostExport Request Failed")))
-			->AddToken(FTextToken::Create(FText::FromString(Endpoint)))
-			->AddToken(FTextToken::Create(FText::FromString(FString::SanitizeFloat(StatusCode))))
-			->AddToken(FTextToken::Create(FText::FromString(ErrorMessage)));
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
+      .Message(EMessageSeverity::Error, FText::FromString(TEXT("PostExport Request Failed")))
+      ->AddToken(FTextToken::Create(FText::FromString(Endpoint)))
+      ->AddToken(FTextToken::Create(FText::FromString(FString::SanitizeFloat(StatusCode))))
+      ->AddToken(FTextToken::Create(FText::FromString(ErrorMessage)));
 
-		Callback(nullptr, StatusCode, true);
-		return;
-	}
+    Callback(nullptr, StatusCode, true);
+    return;
+  }
 
-	FSkyboxAiHttpHeaders Headers = FSkyboxAiHttpHeaders();
-	Headers.Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GPost;
+  FSkyboxAiHttpHeaders Headers = FSkyboxAiHttpHeaders();
+  Headers.Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GPost;
 
-	ApiClient->MakeAPIRequest(
-		Endpoint,
-		Headers,
-		BodyPtr,
-		[this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
-		{
-			FSkyboxExportResponse Response;
+  ApiClient->MakeAPIRequest(
+    Endpoint,
+    Headers,
+    BodyPtr,
+    [this, Callback](const FString& Body, int StatusCode, bool bConnectedSuccessfully)
+    {
+      FSkyboxExportResponse Response;
 
-			if (!ApiClient->DeserializeJsonToUStruct<FSkyboxExportResponse>(Body, &Response))
-			{
-				Callback(nullptr, StatusCode, bConnectedSuccessfully);
-			}
-			else
-			{
-				Callback(&Response, StatusCode, bConnectedSuccessfully);
-			}
-		}
-	);
+      if (!ApiClient->DeserializeJsonToUStruct<FSkyboxExportResponse>(Body, &Response))
+      {
+        Callback(nullptr, StatusCode, bConnectedSuccessfully);
+      }
+      else
+      {
+        Callback(&Response, StatusCode, bConnectedSuccessfully);
+      }
+    }
+  );
 }
 
 bool USkyboxProvider::IsClientValid() const
 {
-	if (ApiClient == nullptr)
-	{
-		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
-			FText::FromString(TEXT("Client wasn't initialized"))
-		);
-		return false;
-	}
+  if (ApiClient == nullptr)
+  {
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
+      FText::FromString(TEXT("Client wasn't initialized"))
+    );
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
 bool USkyboxProvider::ShouldShowPremiumContent() const
 {
-	const UBlockadeLabsSkyboxAiSettings* EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
-	return EditorSettings->bEnablePremiumContent;
+  const UBlockadeLabsSkyboxAiSettings* EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
+  return EditorSettings->bEnablePremiumContent;
 }
 
 bool USkyboxProvider::RemovePostUnsetFields(const FSkyboxGenerateRequest& Data, FString* OutBody) const
 {
-	TSharedPtr<FJsonObject> FilteredJsonObj = MakeShareable(new FJsonObject);
+  TSharedPtr<FJsonObject> FilteredJsonObj = MakeShareable(new FJsonObject);
 
-	if (!FJsonObjectConverter::UStructToJsonObject(
-		FSkyboxGenerateRequest::StaticStruct(),
-		&Data,
-		FilteredJsonObj.ToSharedRef(),
-		0,
-		0
-	))
-	{
-		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
-			FText::FromString(TEXT("[USkyboxProvider::Post] Serialization from JSON failed"))
-		);
+  if (!FJsonObjectConverter::UStructToJsonObject(
+    FSkyboxGenerateRequest::StaticStruct(),
+    &Data,
+    FilteredJsonObj.ToSharedRef(),
+    0,
+    0
+  ))
+  {
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
+      FText::FromString(TEXT("[USkyboxProvider::Post] Serialization from JSON failed"))
+    );
 
-		return false;
-	}
+    return false;
+  }
 
-	if (
-		FilteredJsonObj->HasField(TEXT("negative_text")) &&
-		FilteredJsonObj->GetStringField(TEXT("negative_text")).Equals(
-			SkyboxAiHttpClientDefinitions::GIgnoreStringJsonFieldValue
-		)
-	)
-	{
-		FilteredJsonObj->RemoveField(TEXT("negative_text"));
-	}
+  if (FilteredJsonObj->HasField(TEXT("negative_text")) &&
+    FilteredJsonObj->GetStringField(TEXT("negative_text")).Equals(SkyboxAiHttpClientDefinitions::GIgnoreStringJsonFieldValue))
+  {
+    FilteredJsonObj->RemoveField(TEXT("negative_text"));
+  }
 
-	if (
-		FilteredJsonObj->HasField(TEXT("skybox_style_id")) &&
-		FilteredJsonObj->GetIntegerField(TEXT("skybox_style_id")) == INDEX_NONE
-	)
-	{
-		FilteredJsonObj->RemoveField(TEXT("skybox_style_id"));
-	}
+  if (FilteredJsonObj->HasField(TEXT("skybox_style_id")) && FilteredJsonObj->GetIntegerField(TEXT("skybox_style_id")) == INDEX_NONE)
+  {
+    FilteredJsonObj->RemoveField(TEXT("skybox_style_id"));
+  }
 
-	if (
-		FilteredJsonObj->HasField(TEXT("remix_imagine_id")) &&
-		FilteredJsonObj->GetIntegerField(TEXT("remix_imagine_id")) == INDEX_NONE
-	)
-	{
-		FilteredJsonObj->RemoveField(TEXT("remix_imagine_id"));
-	}
+  if (FilteredJsonObj->HasField(TEXT("remix_imagine_id")) && FilteredJsonObj->GetIntegerField(TEXT("remix_imagine_id")) == INDEX_NONE)
+  {
+    FilteredJsonObj->RemoveField(TEXT("remix_imagine_id"));
+  }
 
-	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(OutBody);
-	return FJsonSerializer::Serialize(FilteredJsonObj.ToSharedRef(), Writer);
+  TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(OutBody);
+  return FJsonSerializer::Serialize(FilteredJsonObj.ToSharedRef(), Writer);
 }
 
 FString USkyboxProvider::GetStylesResponseKeysHyphensToUnderscore(const FString& Body) const
 {
-	return Body.Replace(TEXT("\"max-char\""), TEXT("\"max_char\""))
-	           .Replace(
-		           TEXT("\"negative-text-max-char\""),
-		           TEXT("\"negative_text_max_char\"")
-	           );
+  return Body.Replace(TEXT("\"max-char\""), TEXT("\"max_char\""))
+             .Replace(
+               TEXT("\"negative-text-max-char\""),
+               TEXT("\"negative_text_max_char\"")
+             );
 }

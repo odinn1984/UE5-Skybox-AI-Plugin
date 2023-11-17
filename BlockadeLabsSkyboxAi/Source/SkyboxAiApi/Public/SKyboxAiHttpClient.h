@@ -20,116 +20,116 @@ class FHttpModule;
 
 namespace SkyboxAiHttpClientDefinitions
 {
-	const static FName GMessageLogName = TEXT("SkyboxAI");
-	const static FString GIgnoreStringJsonFieldValue = TEXT("IGNOREME");
-	const static FString JsonFailureString = TEXT("--FAILURE--");
+  const static FName GMessageLogName = TEXT("SkyboxAI");
+  const static FString GIgnoreStringJsonFieldValue = TEXT("IGNOREME");
+  const static FString JsonFailureString = TEXT("--FAILURE--");
 
-	namespace HTTPVerbs
-	{
-		const static FString GGet = "GET";
-		const static FString GPost = "POST";
-		const static FString GPut = "PUT";
-		const static FString GDelete = "DELETE";
-		const static FString GHead = "HEAD";
-	}
+  namespace HTTPVerbs
+  {
+    const static FString GGet = "GET";
+    const static FString GPost = "POST";
+    const static FString GPut = "PUT";
+    const static FString GDelete = "DELETE";
+    const static FString GHead = "HEAD";
+  }
 
-	namespace ContentTypes
-	{
-		const static FString GJson = TEXT("application/json");
-		const static FString GFormData = TEXT("multipart/form-data");
-	}
+  namespace ContentTypes
+  {
+    const static FString GJson = TEXT("application/json");
+    const static FString GFormData = TEXT("multipart/form-data");
+  }
 }
 
 USTRUCT(BlueprintType)
 struct FSkyboxAiHttpHeaders
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 
-	UPROPERTY()
-	FString Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GGet;
+  UPROPERTY()
+  FString Method = SkyboxAiHttpClientDefinitions::HTTPVerbs::GGet;
 
-	UPROPERTY()
-	FString Accept = SkyboxAiHttpClientDefinitions::ContentTypes::GJson;
+  UPROPERTY()
+  FString Accept = SkyboxAiHttpClientDefinitions::ContentTypes::GJson;
 
-	UPROPERTY()
-	FString ContentType = SkyboxAiHttpClientDefinitions::ContentTypes::GJson;
+  UPROPERTY()
+  FString ContentType = SkyboxAiHttpClientDefinitions::ContentTypes::GJson;
 };
 
 UCLASS()
 class SKYBOXAIAPI_API USKyboxAiHttpClient : public UObject
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 
 public:
-	USKyboxAiHttpClient();
+  USKyboxAiHttpClient();
 
-	virtual void SetHttpModule(FHttpModule* InHttp);
-	virtual void MakeAPIRequest(
-		const FString& Endpoint,
-		const FSkyboxAiHttpHeaders& Headers,
-		const FString& Body,
-		FSkyboxAiHttpCallback Callback);
+  virtual void SetHttpModule(FHttpModule* InHttp);
+  virtual void MakeAPIRequest(
+    const FString& Endpoint,
+    const FSkyboxAiHttpHeaders& Headers,
+    const FString& Body,
+    FSkyboxAiHttpCallback Callback);
 
-	template <typename T> bool SerializeJson(const T& Object, FString& OutString);
-	template <typename T> bool SerializeJson(const TArray<T>& Object, FString& OutString);
-	template <typename T> bool DeserializeJsonToUStruct(const FString& Body, T* OutObject);
-	template <typename T> bool DeserializeJsonToUStructArray(const FString& Body, TArray<T>* OutArray);
+  template <typename T> bool SerializeJson(const T& Object, FString& OutString);
+  template <typename T> bool SerializeJson(const TArray<T>& Object, FString& OutString);
+  template <typename T> bool DeserializeJsonToUStruct(const FString& Body, T* OutObject);
+  template <typename T> bool DeserializeJsonToUStructArray(const FString& Body, TArray<T>* OutArray);
 
 private:
-	FHttpModule* Http;
+  FHttpModule* Http;
 
-	void HandleHttpResponse(FHttpResponseRef Res);
+  void HandleHttpResponse(FHttpResponseRef Res);
 };
 
 template <typename T> bool USKyboxAiHttpClient::SerializeJson(const T& Object, FString& OutString)
 {
-	if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutString, 0, 0))
-	{
-		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
-			FText::FromString(TEXT("Serialization from JSON failed"))
-		);
-		return false;
-	}
+  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutString, 0, 0))
+  {
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
+      FText::FromString(TEXT("Serialization from JSON failed"))
+    );
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
 template <typename T> bool USKyboxAiHttpClient::SerializeJson(const TArray<T>& Object, FString& OutString)
 {
-	if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutString, 0, 0))
-	{
-		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
-			.Error(FText::FromString(TEXT("Serialization from JSON failed")))
-			->AddToken(FTextToken::Create(FText::FromString(Object.ToString())));
-		return false;
-	}
+  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutString, 0, 0))
+  {
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
+      .Error(FText::FromString(TEXT("Serialization from JSON failed")))
+      ->AddToken(FTextToken::Create(FText::FromString(Object.ToString())));
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
 template <typename T> bool USKyboxAiHttpClient::DeserializeJsonToUStruct(const FString& Body, T* OutObject)
 {
-	if (!FJsonObjectConverter::JsonObjectStringToUStruct(Body, OutObject, 0, 0))
-	{
-		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
-			.Error(FText::FromString(TEXT("Deserialization to JSON failed")))
-			->AddToken(FTextToken::Create(FText::FromString(Body)));
-		return false;
-	}
+  if (!FJsonObjectConverter::JsonObjectStringToUStruct(Body, OutObject, 0, 0))
+  {
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
+      .Error(FText::FromString(TEXT("Deserialization to JSON failed")))
+      ->AddToken(FTextToken::Create(FText::FromString(Body)));
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
 template <typename T> bool USKyboxAiHttpClient::DeserializeJsonToUStructArray(const FString& Body, TArray<T>* OutArray)
 {
-	if (!FJsonObjectConverter::JsonArrayStringToUStruct(Body, OutArray, 0, 0))
-	{
-		OutArray = new TArray<T>();
-		FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
-			.Error(FText::FromString(TEXT("Deserialization to JSON Array failed")))
-			->AddToken(FTextToken::Create(FText::FromString(Body)));
-		return false;
-	}
+  if (!FJsonObjectConverter::JsonArrayStringToUStruct(Body, OutArray, 0, 0))
+  {
+    OutArray = new TArray<T>();
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
+      .Error(FText::FromString(TEXT("Deserialization to JSON Array failed")))
+      ->AddToken(FTextToken::Create(FText::FromString(Body)));
+    return false;
+  }
 
-	return true;
+  return true;
 }

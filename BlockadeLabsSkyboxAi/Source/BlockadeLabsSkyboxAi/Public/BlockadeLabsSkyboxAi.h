@@ -9,19 +9,19 @@
 class FBlockadeLabsSkyboxAiModule : public IModuleInterface
 {
 public:
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
+  virtual void StartupModule() override;
+  virtual void ShutdownModule() override;
 
 private:
-	TSharedPtr<FUICommandList> PluginCommands;
-	TSharedPtr<SSkyboxAiWidget> SkyboxWidget;
-	TSharedPtr<FSkyboxAiWidgetData> SkyboxWidgetData;
+  TSharedPtr<FUICommandList> PluginCommands;
+  TSharedPtr<SSkyboxAiWidget> SkyboxWidget;
+  TSharedPtr<FSkyboxAiWidgetData> SkyboxWidgetData;
 
-	void OpenPluginMenuItemClicked();
-	TSharedRef<SDockTab> OnSpawnPluginTab(const FSpawnTabArgs& SpawnTabArgs);
+  void OpenPluginMenuItemClicked();
+  TSharedRef<SDockTab> OnSpawnPluginTab(const FSpawnTabArgs& SpawnTabArgs);
 
-	void RegisterMenus();
-	TSharedRef<SSkyboxAiWidget> GetSkyboxWidget();
+  void RegisterMenus();
+  TSharedRef<SSkyboxAiWidget> GetSkyboxWidget();
 
-	void OnSkyboxAiWidgetDataChanged(const FSkyboxAiWidgetData& Data);
+  void OnSkyboxAiWidgetDataChanged(const FSkyboxAiWidgetData& Data);
 };

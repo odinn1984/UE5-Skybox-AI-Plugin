@@ -4,83 +4,83 @@ using UnrealBuildTool;
 
 public class SkyboxAiApi : ModuleRules
 {
-	public SkyboxAiApi(ReadOnlyTargetRules Target) : base(Target)
-	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+  public SkyboxAiApi(ReadOnlyTargetRules Target) : base(Target)
+  {
+    PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicIncludePaths.AddRange(
-			new string[]
-			{
-				// ... add public include paths required here ...
-			}
-		);
-
-
-		PrivateIncludePaths.AddRange(
-			new string[]
-			{
-				// ... add other private include paths required here ...
-			}
-		);
+    PublicIncludePaths.AddRange(
+      new string[]
+      {
+        // ... add public include paths required here ...
+      }
+    );
 
 
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core"
-				// ... add other public dependencies that you statically link with here ...
-			}
-		);
+    PrivateIncludePaths.AddRange(
+      new string[]
+      {
+        // ... add other private include paths required here ...
+      }
+    );
 
 
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Projects",
-				"InputCore",
-				"EditorFramework",
-				"UnrealEd",
-				"ToolMenus",
-				"CoreUObject",
-				"Engine",
-				"Json",
-				"JsonUtilities",
-				"DeveloperSettings",
-				"MessageLog",
-				"AutomationDriver"
-				// ... add private dependencies that you statically link with here ...
-			}
-		);
+    PublicDependencyModuleNames.AddRange(
+      new string[]
+      {
+        "Core"
+        // ... add other public dependencies that you statically link with here ...
+      }
+    );
 
-		BuildVersion Version;
 
-		if (BuildVersion.TryRead(BuildVersion.GetDefaultFileName(), out Version))
-		{
-			if (Version.MajorVersion == 5 && Version.MinorVersion <= 1)
-			{
-				PrivateDependencyModuleNames.AddRange(
-					new string[]
-					{
-						"HTTP"
-					}
-				);
-			}
-			else if (Version.MajorVersion == 5 && Version.MinorVersion >= 2)
-			{
-				PrivateDependencyModuleNames.AddRange(
-					new string[]
-					{
-						"Http"
-					}
-				);
-			}
-		}
+    PrivateDependencyModuleNames.AddRange(
+      new string[]
+      {
+        "Projects",
+        "InputCore",
+        "EditorFramework",
+        "UnrealEd",
+        "ToolMenus",
+        "CoreUObject",
+        "Engine",
+        "Json",
+        "JsonUtilities",
+        "DeveloperSettings",
+        "MessageLog",
+        "AutomationDriver"
+        // ... add private dependencies that you statically link with here ...
+      }
+    );
 
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-		);
-	}
+    BuildVersion Version;
+
+    if (BuildVersion.TryRead(BuildVersion.GetDefaultFileName(), out Version))
+    {
+      if (Version.MajorVersion == 5 && Version.MinorVersion <= 1)
+      {
+        PrivateDependencyModuleNames.AddRange(
+          new string[]
+          {
+            "HTTP"
+          }
+        );
+      }
+      else if (Version.MajorVersion == 5 && Version.MinorVersion >= 2)
+      {
+        PrivateDependencyModuleNames.AddRange(
+          new string[]
+          {
+            "Http"
+          }
+        );
+      }
+    }
+
+    DynamicallyLoadedModuleNames.AddRange(
+      new string[]
+      {
+        // ... add any modules that your module loads dynamically here ...
+      }
+    );
+  }
 }
