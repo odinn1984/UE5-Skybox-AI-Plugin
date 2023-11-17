@@ -14,41 +14,41 @@ struct FImagineGetExportsResponse;
 USTRUCT(BlueprintType)
 struct FSkyboxApiError
 {
-  GENERATED_BODY()
+	GENERATED_BODY()
 
-  UPROPERTY()
-  FString error = TEXT("");
+	UPROPERTY()
+	FString error = TEXT("");
 };
 
 UCLASS()
 class SKYBOXAIAPI_API USkyboxAiApi : public UObject
 {
-  GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-  explicit USkyboxAiApi();
+	explicit USkyboxAiApi();
 
-	FORCEINLINE USKyboxAiHttpClient *Client() const { return ApiClient; }
-  FORCEINLINE USkyboxProvider *Skybox() const { return SkyboxProvider; }
-  FORCEINLINE UImagineProvider *Imagine() const { return ImagineProvider; }
+	FORCEINLINE USKyboxAiHttpClient* Client() const { return ApiClient; }
+	FORCEINLINE USkyboxProvider* Skybox() const { return SkyboxProvider; }
+	FORCEINLINE UImagineProvider* Imagine() const { return ImagineProvider; }
 
-  void SetClient(USKyboxAiHttpClient *InAPIClient);
-  void SaveExportedImage(const FString &ImageUrl, TFunction<void(bool bSuccess)> Callback) const;
+	void SetClient(USKyboxAiHttpClient* InAPIClient);
+	void SaveExportedImage(const FString& ImageUrl, TFunction<void(bool bSuccess)> Callback) const;
 
 protected:
-  virtual bool IsClientValid() const;
+	virtual bool IsClientValid() const;
 
 private:
-  UPROPERTY()
-  TObjectPtr<USKyboxAiHttpClient> ApiClient;
+	UPROPERTY()
+	TObjectPtr<USKyboxAiHttpClient> ApiClient;
 
-  UPROPERTY()
-  TObjectPtr<USkyboxProvider> SkyboxProvider;
+	UPROPERTY()
+	TObjectPtr<USkyboxProvider> SkyboxProvider;
 
-  UPROPERTY()
-  TObjectPtr<UImagineProvider> ImagineProvider;
+	UPROPERTY()
+	TObjectPtr<UImagineProvider> ImagineProvider;
 
-  void DownloadImage(
-    const FString &ImageUrl,
-    TFunction<void(TArray<uint8> ExportedImage, bool bSuccess)> Callback) const;
+	void DownloadImage(
+		const FString& ImageUrl,
+		TFunction<void(TArray<uint8> ExportedImage, bool bSuccess)> Callback) const;
 };

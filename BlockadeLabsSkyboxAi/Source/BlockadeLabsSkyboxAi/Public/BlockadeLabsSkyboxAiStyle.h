@@ -9,21 +9,21 @@
 class FBlockadeLabsSkyboxAiStyle
 {
 public:
-  static void Initialize();
+	static void Initialize();
 
-  static void Shutdown();
+	static void Shutdown();
 
-  /** reloads textures used by slate renderer */
-  static void ReloadTextures();
+	/** reloads textures used by slate renderer */
+	static void ReloadTextures();
 
-  /** @return The Slate style set for the Shooter game */
-  static const ISlateStyle &Get();
+	/** @return The Slate style set for the Shooter game */
+	static const ISlateStyle& Get();
 
-  static FName GetStyleSetName();
-
-private:
-  static TSharedRef<class FSlateStyleSet> Create();
+	static FName GetStyleSetName();
 
 private:
-  static TSharedPtr<class FSlateStyleSet> StyleInstance;
+	static TSharedRef<class FSlateStyleSet> Create();
+
+private:
+	static TSharedPtr<class FSlateStyleSet> StyleInstance;
 };

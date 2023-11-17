@@ -6,13 +6,13 @@
 
 void FBlockadeLabsSkyboxAiCommands::RegisterCommands()
 {
-  UI_COMMAND(
-    OpenPluginWindow,
-    "BlockadeLabsSkyboxAi",
-    "Bring up BlockadeLabs SkyboxAI window",
-    EUserInterfaceActionType::Button,
-    FInputChord()
-    );
+	UI_COMMAND(
+		OpenPluginWindow,
+		"BlockadeLabsSkyboxAi",
+		"Bring up BlockadeLabs SkyboxAI window",
+		EUserInterfaceActionType::Button,
+		FInputChord()
+	);
 }
 
 #undef LOCTEXT_NAMESPACE

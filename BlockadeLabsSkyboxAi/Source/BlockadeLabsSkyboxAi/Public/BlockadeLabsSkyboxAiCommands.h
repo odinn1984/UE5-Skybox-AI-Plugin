@@ -9,19 +9,19 @@
 class FBlockadeLabsSkyboxAiCommands : public TCommands<FBlockadeLabsSkyboxAiCommands>
 {
 public:
-  FBlockadeLabsSkyboxAiCommands()
-    : TCommands<FBlockadeLabsSkyboxAiCommands>(
-      TEXT("BlockadeLabsSkyboxAi"),
-      NSLOCTEXT("Contexts", "BlockadeLabsSkyboxAi", "BlockadeLabs SkyboxAI Plugin"),
-      NAME_None,
-      FBlockadeLabsSkyboxAiStyle::GetStyleSetName()
-      )
-  {
-  }
+	FBlockadeLabsSkyboxAiCommands()
+		: TCommands<FBlockadeLabsSkyboxAiCommands>(
+			TEXT("BlockadeLabsSkyboxAi"),
+			NSLOCTEXT("Contexts", "BlockadeLabsSkyboxAi", "BlockadeLabs SkyboxAI Plugin"),
+			NAME_None,
+			FBlockadeLabsSkyboxAiStyle::GetStyleSetName()
+		)
+	{
+	}
 
-  // TCommands<> interface
-  virtual void RegisterCommands() override;
+	// TCommands<> interface
+	virtual void RegisterCommands() override;
 
 public:
-  TSharedPtr<FUICommandInfo> OpenPluginWindow;
+	TSharedPtr<FUICommandInfo> OpenPluginWindow;
 };
