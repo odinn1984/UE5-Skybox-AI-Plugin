@@ -1,29 +1,29 @@
 {
-  "FileVersion": 3,
-  "Version": 1,
-  "VersionName": "0.1",
-  "FriendlyName": "BlockadeLabs SkyboxAI",
-  "Description": "Integration with Blockade Labs Skybox AI",
-  "Category": "AI",
-  "CreatedBy": "Odinn",
-  "CreatedByURL": "https://github.com/odinn1984",
-  "DocsURL": "https://github.com/odinn1984/BlockadeLabs-SkyboxAI/README.md",
-  "MarketplaceURL": "",
-  "SupportURL": "https://github.com/odinn1984/BlockadeLabs-SkyboxAI/issues",
-  "CanContainContent": false,
-  "IsBetaVersion": true,
-  "IsExperimentalVersion": true,
-  "Installed": false,
-  "Modules": [
-    {
-      "Name": "BlockadeLabsSkyboxAi",
-      "Type": "Editor",
-      "LoadingPhase": "Default"
-    },
-    {
-      "Name": "SkyboxAiApi",
-      "Type": "Editor",
-      "LoadingPhase": "Default"
-    }
-  ]
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1",
+	"FriendlyName": "BlockadeLabs SkyboxAI",
+	"Description": "Integration with Blockade Labs Skybox AI",
+	"Category": "AI",
+	"CreatedBy": "Odinn",
+	"CreatedByURL": "https://github.com/odinn1984",
+	"DocsURL": "https://github.com/odinn1984/UE5-Skybox-AI-Plugin#readme",
+	"MarketplaceURL": "",
+	"SupportURL": "https://github.com/odinn1984/UE5-Skybox-AI-Plugin/issues",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "BlockadeLabsSkyboxAi",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "SkyboxAiApi",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
 }
