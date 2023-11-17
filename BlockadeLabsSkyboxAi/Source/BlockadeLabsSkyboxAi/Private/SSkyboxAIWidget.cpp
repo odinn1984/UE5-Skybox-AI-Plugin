@@ -661,26 +661,35 @@ void SSkyboxAiWidget::StartPollingGenerationStatus(const FString& SkyboxId)
 		EAsyncExecution::TaskGraph,
 		[this, SkyboxId]()
 		{
+			int PollCount = 0;
 			while (bGeneratePolling.Load() && !IsEngineExitRequested())
 			{
-				PollGenerationStatus(SkyboxId);
+				PollGenerationStatus(SkyboxId, PollCount++);
 				FPlatformProcess::Sleep(GetMutableDefault<UBlockadeLabsSkyboxAiSettings>()->ApiPollingInterval);
 			}
 		}
 	);
 }
 
-void SSkyboxAiWidget::PollGenerationStatus(const FString& SkyboxId)
+void SSkyboxAiWidget::PollGenerationStatus(const FString& SkyboxId, int PollCount)
 {
 	SkyboxApi->Imagine()->GetRequestsObfuscatedId(
 		SkyboxId,
-		[this, SkyboxId](FImagineGetExportsResponseRequest* Response, int StatusCode, bool bConnectedSuccessfully)
+		[this, SkyboxId, PollCount](FImagineGetExportsResponseRequest* Response, int StatusCode, bool bConnectedSuccessfully)
 		{
+			UBlockadeLabsSkyboxAiSettings* EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
 			bool bStopPolling = false;
 			bool bSuccess = true;
 			FString ErrorMsg;
 
-			if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+			if (PollCount >= EditorSettings->MaxPollAttempts)
+			{
+				bStopPolling = true;
+				bSuccess = false;
+				ErrorMsg = TEXT("Timeout waiting for skybox to generate");
+			}
+
+			if (bSuccess && Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
 			{
 				bStopPolling = true;
 				bSuccess = false;
@@ -792,26 +801,35 @@ void SSkyboxAiWidget::StartPollingExportStatus(const FString& SkyboxId)
 		EAsyncExecution::TaskGraph,
 		[this, SkyboxId]()
 		{
+			int PollCount = 0;
 			while (bExportPolling.Load() && !IsEngineExitRequested())
 			{
-				PollExportStatus(SkyboxId);
+				PollExportStatus(SkyboxId, PollCount++);
 				FPlatformProcess::Sleep(GetMutableDefault<UBlockadeLabsSkyboxAiSettings>()->ApiPollingInterval);
 			}
 		}
 	);
 }
 
-void SSkyboxAiWidget::PollExportStatus(const FString& SkyboxId)
+void SSkyboxAiWidget::PollExportStatus(const FString& SkyboxId, int PollCount)
 {
 	SkyboxApi->Skybox()->GetExportById(
 		SkyboxId,
-		[this, SkyboxId](FSkyboxExportResponse* Response, int StatusCode, bool bConnectedSuccessfully)
+		[this, SkyboxId, PollCount](FSkyboxExportResponse* Response, int StatusCode, bool bConnectedSuccessfully)
 		{
+			UBlockadeLabsSkyboxAiSettings* EditorSettings = GetMutableDefault<UBlockadeLabsSkyboxAiSettings>();
 			bool bStopPolling = false;
 			bool bSuccess = true;
 			FString ErrorMsg;
 
-			if (Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
+			if (PollCount >= EditorSettings->MaxPollAttempts)
+			{
+				bStopPolling = true;
+				bSuccess = false;
+				ErrorMsg = TEXT("Timeout waiting for export");
+			}
+
+			if (bSuccess && Response == nullptr || !bConnectedSuccessfully || StatusCode >= 300)
 			{
 				bStopPolling = true;
 				bSuccess = false;

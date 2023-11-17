@@ -37,7 +37,7 @@ public:
 		EditAnywhere,
 		Category = "API Settings",
 		AdvancedDisplay,
-		meta = (UIMin = "100", UIMax = "10000", ClampMin = "100", ClampMax = "10000", DisplayName = "Max Polling Attempts")
+		meta = (UIMin = "300", UIMax = "10000", ClampMin = "300", ClampMax = "10000", DisplayName = "Max Polling Attempts")
 	)
 	int MaxPollAttempts = 600;
 };

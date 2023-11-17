@@ -165,9 +165,9 @@ private:
 	FSkyboxGenerateRequest GetGenerateRequest() const;
 	void ExecuteGenerate(FSkyboxGenerateRequest& Request);
 	void StartPollingGenerationStatus(const FString& SkyboxId);
-	void PollGenerationStatus(const FString& SkyboxId);
+	void PollGenerationStatus(const FString& SkyboxId, int PollCount = 0);
 	void StartPollingExportStatus(const FString& SkyboxId);
-	void PollExportStatus(const FString& SkyboxId);
+	void PollExportStatus(const FString& SkyboxId, int PollCount = 0);
 	FReply OnImportClicked();
 	void ExecuteImport(const uint32 SkyboxImagineId);
 	FReply OnRemixClicked();
