@@ -22,14 +22,17 @@ public:
 
   inline static const FText ValidationErrorTitle = FText::FromString(TEXT("Error"));
 
+  FORCEINLINE TSharedRef<SEditableTextBox> GetInputField() const { return InputField.ToSharedRef(); }
+
   void Construct(const FArguments& InArgs);
+  bool IsInputValid() const;
+
+protected:
+  TSharedPtr<SEditableTextBox> InputField;
 
 private:
   FText DialogTitle;
   FOnInputDialogCancel OnCancel;
   FOnInputDialogConfirm OnConfirm;
   TSharedPtr<SWindow> ParentWindow;
-  TSharedPtr<SEditableTextBox> InputField;
-
-  bool IsInputValid() const;
 };
