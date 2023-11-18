@@ -75,7 +75,7 @@ void USKyboxAiHttpClient::HandleHttpResponse(FHttpResponseRef Response)
   FString ErrorMessage = Response->GetContentAsString();
   FSkyboxApiError ParsedResponse;
 
-  if (!DeserializeJsonToUStruct<FSkyboxApiError>(Response->GetContentAsString(), &ParsedResponse) && !ParsedResponse.error.IsEmpty())
+  if (!DeserializeJsonToUStruct<FSkyboxApiError>(ErrorMessage, &ParsedResponse) && !ParsedResponse.error.IsEmpty())
   {
     ErrorMessage = ParsedResponse.error;
   }

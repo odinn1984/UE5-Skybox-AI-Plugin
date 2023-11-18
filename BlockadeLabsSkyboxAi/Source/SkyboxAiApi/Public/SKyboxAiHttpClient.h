@@ -63,6 +63,8 @@ class SKYBOXAIAPI_API USKyboxAiHttpClient : public UObject
 public:
   USKyboxAiHttpClient();
 
+  FORCEINLINE FHttpModule* HttpModule() const { return Http; }
+
   virtual void SetHttpModule(FHttpModule* InHttp);
   virtual void MakeAPIRequest(
     const FString& Endpoint,
@@ -71,7 +73,7 @@ public:
     FSkyboxAiHttpCallback Callback);
 
   template <typename T> bool SerializeJson(const T& Object, FString& OutString);
-  template <typename T> bool SerializeJson(const TArray<T>& Object, FString& OutString);
+  template <typename T> bool SerializeJson(const TArray<T>& ObjectArr, FString& OutString);
   template <typename T> bool DeserializeJsonToUStruct(const FString& Body, T* OutObject);
   template <typename T> bool DeserializeJsonToUStructArray(const FString& Body, TArray<T>* OutArray);
 
@@ -85,26 +87,37 @@ template <typename T> bool USKyboxAiHttpClient::SerializeJson(const T& Object, F
 {
   if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutString, 0, 0))
   {
-    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(
-      FText::FromString(TEXT("Serialization from JSON failed"))
-    );
+    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(FText::FromString(TEXT("Serialization from JSON failed")));
+    OutString.Empty();
     return false;
   }
 
   return true;
 }
 
-template <typename T> bool USKyboxAiHttpClient::SerializeJson(const TArray<T>& Object, FString& OutString)
+template <typename T> bool USKyboxAiHttpClient::SerializeJson(const TArray<T>& ObjectArr, FString& OutString)
 {
-  if (!FJsonObjectConverter::UStructToJsonObjectString(T::StaticStruct(), &Object, OutString, 0, 0))
+  TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutString);
+  Writer->WriteArrayStart();
+
+  for (const T& Item : ObjectArr)
   {
-    FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
-      .Error(FText::FromString(TEXT("Serialization from JSON failed")))
-      ->AddToken(FTextToken::Create(FText::FromString(Object.ToString())));
-    return false;
+    TSharedPtr<FJsonObject> JsonObject = FJsonObjectConverter::UStructToJsonObject(Item);
+
+    if (!JsonObject.IsValid())
+    {
+      FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName).Error(FText::FromString(TEXT("Serialization from JSON failed")));
+      Writer->Close();
+      OutString.Empty();
+      return false;
+    }
+
+    FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
   }
 
-  return true;
+  Writer->WriteArrayEnd();
+
+  return Writer->Close();
 }
 
 template <typename T> bool USKyboxAiHttpClient::DeserializeJsonToUStruct(const FString& Body, T* OutObject)
@@ -124,7 +137,7 @@ template <typename T> bool USKyboxAiHttpClient::DeserializeJsonToUStructArray(co
 {
   if (!FJsonObjectConverter::JsonArrayStringToUStruct(Body, OutArray, 0, 0))
   {
-    OutArray = new TArray<T>();
+    if (OutArray != nullptr) OutArray->Empty();
     FMessageLog(SkyboxAiHttpClientDefinitions::GMessageLogName)
       .Error(FText::FromString(TEXT("Deserialization to JSON Array failed")))
       ->AddToken(FTextToken::Create(FText::FromString(Body)));
